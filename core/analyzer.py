@@ -1401,20 +1401,25 @@ SYNTHESE ANALYSE :
 {ctx}
 
 Tu dois rédiger le BRIEF GABRIEL : une synthèse exécutive ultra-concise de cette audience.
-3 phrases. Chacune percutante, mémorable, non-évidente.
+3 phrases, en français simple et concret, chacune utile à quelqu'un qui doit décider.
 
-LENS REQUIS :
-- La phrase "qui" doit aller au-dela des apparences. Qui sont-ils VRAIMENT — quel potentiel, quelle aspiration profonde, quel appel interieur les traverse ?
-- La phrase "insight" doit reveler la verite que personne ne verrait sans analyse profonde — quelque chose sur leur purpose bloque, leur espoir cache, leur besoin de signifiance.
-- La phrase "action" doit etre la reponse JUSTE a leur vraie attente — pas un angle marketing, une reponse honnete.
+RÈGLES DE FOND (non négociables) :
+- Chaque phrase s'appuie sur un élément PRÉSENT dans la SYNTHESE ANALYSE ci-dessus (émotion dominante, motivation, tension, désir, objection). N'ajoute aucun trait, métier, rêve ou histoire qui n'y figure pas.
+- Interdits : métaphores héroïques ou mystiques (« soldats », « guerriers », « âmes », « rituel », « royaume », « sacré », « baptême »…), archétypes, vocabulaire de quête ou de destin, formules du type « au-delà des apparences ».
+- Aucune pensée devinée : décris ce que les gens EXPRIMENT, pas ce qu'ils « portent en silence ».
+
+CONTENU :
+- "qui" : qui sont-ils d'après ce qu'ils écrivent — situation, ce qu'ils cherchent, ce qui les freine.
+- "insight" : la tension principale observée entre ce qu'ils veulent et ce qui les bloque (la plus utile pour décider).
+- "action" : la réponse concrète à donner à leur attente principale — pas un slogan.
 
 Reponds UNIQUEMENT avec ce JSON :
 
 {{
   "brief": {{
-    "qui": "1 phrase — qui est vraiment cette audience, au-dela des apparences. Leur essence, leur aspiration profonde, ce qu ils portent.",
-    "insight": "1 phrase — la verite la plus contre-intuitive revelee par ces commentaires. Leur besoin cache, leur espoir decu, leur potentiel bloque.",
-    "action": "1 phrase imperative — la reponse juste et honnete que le createur doit donner a la vraie attente de cette audience."
+    "qui": "1 phrase factuelle — qui est cette audience d'après ses commentaires : situation, attente principale, principal frein.",
+    "insight": "1 phrase — la tension principale observée entre ce qu'elle veut et ce qui la bloque, en termes concrets.",
+    "action": "1 phrase à l'impératif — la réponse concrète à donner à son attente principale."
   }}
 }}"""
 

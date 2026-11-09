@@ -86,11 +86,29 @@ _TRANSVERSAL_SIGNALS = [
 ]
 
 
+# « …basés sur cette stratégie », « à partir de mon analyse » : la stratégie ou l'analyse est ici la
+# MATIÈRE de départ, pas ce que l'utilisateur demande. Audit du 06/11/2026 : « Écris-moi trois
+# scripts basés sur cette stratégie » partait vers le Stratège (« script » et « stratégie » à égalité,
+# le Stratège gagnait l'égalité) au lieu du Créateur.
+_INPUT_REFERENCE = re.compile(
+    r"\b(?:bases?|bas(?:e|es|ee|ees)|partir|selon|apres|issus?|issues?|decoul\w+|d'apres|en fonction|inspir\w+)\s+"
+    r"(?:sur\s+|de\s+|d'|du\s+|des\s+)?(?:cette|ma|mon|la|le|notre|nos|mes|cet|cette)\s+"
+    r"(?:strategie|analyse|audience|decision|plan)\b"
+)
+# Verbes de production : avec un format de contenu, la demande est une demande d'écriture.
+_PRODUCTION_VERBS = ("ecris", "ecrire", "redige", "rediger", "genere", "produis", "cree ", "creer", "imagine")
+
+
 def _detect_agent(norm_msg):
     """Retourne (agent, score) du bureau le plus sollicité, ou (None, 0)."""
+    norm_msg = _INPUT_REFERENCE.sub(" ", norm_msg)
     scores = {}
     for agent, words in _KEYWORDS.items():
         scores[agent] = sum(1 for w in words if w in norm_msg)
+    # Une demande d'écriture portant sur un format de contenu est une demande au Créateur, même si
+    # le message cite aussi une stratégie ou une audience.
+    if scores["createur"] > 0 and any(v in norm_msg for v in _PRODUCTION_VERBS):
+        scores["createur"] += 2
     best = max(scores, key=scores.get)
     return (best, scores[best]) if scores[best] > 0 else (None, 0)
 

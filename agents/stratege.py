@@ -627,8 +627,8 @@ Si les données d'audience sont insuffisantes, marque les hypothèses avec '(à 
             strat.pop('pricing_logic_legacy', None)
 
         # Garde-fou : aucun montant ni pourcentage qui ne vienne des données réelles.
-        from agents.strategy_guard import guard_strategy, sources_for
-        _sources = sources_for(brain_context, psycho_json, title)
+        from agents.strategy_guard import guard_strategy, sources_for, measured_psycho
+        _sources = sources_for(brain_context, measured_psycho(psycho_data), title)
 
         def _rewrite(p):
             return _call_llm(p, max_tokens=4000, label="strategie_garde")

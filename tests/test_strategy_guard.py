@@ -231,3 +231,50 @@ def test_un_prix_de_la_memoire_repris_par_le_modele_est_retire_de_la_strategie(m
     stratege.Stratege().run(ctx)
     strat = ctx.get('stratege')['strategie']
     assert '49' not in json.dumps({k: v for k, v in strat.items() if k != 'chiffres_retires'})
+
+
+# ── Audit du 06/11/2026 : le texte du Psychologue n'est pas une source de chiffres ──
+
+PSYCHO_AVEC_PRIX_INVENTE = {
+    'meta': {'total_commentaires': 26},
+    'kpis': {'engagement': {'score': 61}},
+    'distribution': {'positif_pct': 24, 'negatif_pct': 35},
+    'emotions': {'repartition': [{'emotion': 'Frustration', 'pourcentage': 38}],
+                 'commentaires_revelateurs': ["Trop cher : 29 € par mois avant d'avoir le moindre client"]},
+    'top_comments': [{'text': "J'ai récupéré 1 800 € en retard grâce aux relances"}],
+    # Texte rédigé par le modèle : ne doit JAMAIS cautionner un chiffre.
+    'marketing': {'opportunites_offre': ["Une offre « Premier Pas » : 3 mois à 9,90 €/mois, soit 40 % de remise"]},
+    'brief': {'qui': "Des indépendants qui économisent 10 000 € par an"},
+}
+
+
+def test_seules_les_donnees_mesurees_du_psychologue_cautionnent_un_chiffre():
+    a, p = g.allowed_numbers(g.sources_for("Offre à 89 € par mois.", g.measured_psycho(PSYCHO_AVEC_PRIX_INVENTE), "Avis"))
+    assert {'89', '29', '1800'} <= a                      # profil business + verbatims réels
+    assert '9.9' not in a and '10000' not in a            # inventés par le modèle : refusés
+    assert {'24', '35', '38'} <= p and '40' not in p      # mesures conservées, remise inventée refusée
+
+
+def test_un_prix_invente_par_le_psychologue_est_retire_de_la_strategie():
+    sources = g.sources_for("Offre à 89 € par mois.", g.measured_psycho(PSYCHO_AVEC_PRIX_INVENTE), "Avis")
+    strat = {'pricing_logic': {'recommended_price_range': "Forfait à 89 €, avec une entrée à 9,90 €/mois pour 3 mois (comme suggéré dans le rapport)."}}
+    propre, retires = g.guard_strategy(strat, sources)
+    assert '9,90' not in json.dumps(propre, ensure_ascii=False) and '9,90 €' in retires
+    assert '89 €' in propre['pricing_logic']['recommended_price_range']
+
+
+def test_le_stratege_ne_fait_plus_confiance_au_texte_du_psychologue(monkeypatch):
+    from agents import stratege
+    monkeypatch.setattr(stratege, '_call_llm', lambda prompt, max_tokens=5000, label='': (
+        json.dumps({n: 'Comme suggéré dans le rapport.' for n in json.loads(prompt.split('EXTRAITS :\n', 1)[1])}) if label == 'strategie_garde'
+        else json.dumps({'strategie': {'pricing_logic': {'recommended_price_range': "Entrée à 9,90 €/mois pendant 3 mois."}}}) if label == 'strategie'
+        else json.dumps({'point_faible_principal': 'x', 'angle_contrarien': 'y', 'risque_non_couvert': 'z', 'ajustement_recommande': 'w',
+                         'confidence_score_independant': 0.5, 'verdict': 'solide'})))
+    monkeypatch.setattr(stratege, '_load_rag_rules', lambda *a, **k: '')
+    from agents.context import AnalysisContext
+    ctx = AnalysisContext(comments=[], brain_context="Offre à 89 € par mois.", video_context='', title='Avis')
+    ctx.add('psychologue', PSYCHO_AVEC_PRIX_INVENTE)
+    stratege.Stratege().run(ctx)
+    strat = ctx.get('stratege')['strategie']
+    assert '9,90' not in json.dumps({k: v for k, v in strat.items() if k != 'chiffres_retires'}, ensure_ascii=False)
+    assert '9,90 €' in strat['chiffres_retires']

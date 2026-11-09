@@ -104,6 +104,28 @@ def sources_for(brain_context="", psycho_json="", title="") -> str:
     return "\n".join(str(p or "") for p in (brain_context, psycho_json, title))
 
 
+def measured_psycho(psycho_data) -> str:
+    """Seules les données MESURÉES du rapport du Psychologue peuvent cautionner un chiffre :
+    KPIs, distributions, tableau de bord, répartition des émotions et commentaires réels.
+
+    Le texte rédigé par le modèle (brief, personas, « opportunités d'offre », interprétations)
+    n'en fait PAS partie. Audit du 06/11/2026 : le Psychologue avait écrit « 3 mois à 9,90 €/mois »
+    dans une opportunité d'offre ; comme tout le rapport servait de source, ce prix inventé a été
+    conservé par le garde-fou et recopié dans la stratégie d'une entreprise qui vend 89 €/mois."""
+    p = psycho_data or {}
+    emotions = p.get("emotions") or {}
+    mesure = {
+        "meta": p.get("meta"),
+        "kpis": p.get("kpis"),
+        "distribution": p.get("distribution"),
+        "dashboard": p.get("dashboard"),
+        "repartition_emotions": emotions.get("repartition"),
+        "verbatims": emotions.get("commentaires_revelateurs"),
+        "top_comments": [c.get("text") for c in (p.get("top_comments") or []) if isinstance(c, dict)],
+    }
+    return json.dumps(mesure, ensure_ascii=False, default=str)
+
+
 def scrub_numbers(text: str) -> str:
     """Retire tous les montants et pourcentages d'un texte qui n'est pas une donnée fournie
     (typiquement : la mémoire de cas injectée dans le prompt, pour qu'elle ne suggère pas de prix)."""

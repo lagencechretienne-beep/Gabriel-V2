@@ -291,6 +291,37 @@ def health():
     return jsonify({'status': 'ok'})
 
 
+def readiness_report():
+    """État réel des dépendances dont dépend l'utilisation du produit.
+
+    /health ne dit que « le processus répond ». Audit du 06/11/2026 : la base Supabase avait
+    disparu (adresse introuvable) et /health continuait de répondre « ok » alors qu'aucun espace
+    de travail ne pouvait plus être créé. Ici on interroge vraiment la base, et on signale le
+    repli silencieux du modèle sémantique (analyses dégradées sans que l'utilisateur le sache)."""
+    report = {'database': 'not_configured', 'semantic_model': 'unknown'}
+    if getattr(_db, '_supabase', None):
+        try:
+            _db._supabase.table(_db._T_USERS).select('user_id').limit(1).execute()
+            report['database'] = 'ok'
+        except Exception as exc:  # noqa: BLE001 — on rapporte, on ne casse pas
+            report['database'] = 'unreachable'
+            report['database_error'] = type(exc).__name__
+    try:
+        from core import nlp_engine as _nlp
+        report['semantic_model'] = {'loaded': 'ok', 'unavailable': 'fallback_tfidf'}.get(_nlp._model_status, 'not_loaded_yet')
+    except Exception:  # noqa: BLE001
+        report['semantic_model'] = 'unknown'
+    report['status'] = 'ok' if report['database'] != 'unreachable' else 'unavailable'
+    return report
+
+
+@app.route('/health/ready', methods=['GET'])
+def health_ready():
+    """Disponibilité réelle (503 si la base configurée est injoignable). /health reste la vivacité du processus."""
+    report = readiness_report()
+    return jsonify(report), (200 if report['status'] == 'ok' else 503)
+
+
 # Passer le client Supabase à db.py
 from api.auth import _supabase as _sb_client
 _db.init_db(_sb_client)
