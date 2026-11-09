@@ -212,6 +212,12 @@ class TestFournisseurOpenAI:
         assert capture["payload"]["model"] == OpenAIProvider.MODELS["fast"]
         assert "mistral" not in capture["payload"]["model"]
 
+    def test_modele_facture_correspond_au_modele_openai_reel(self):
+        from core.llm_client import OpenAIProvider
+        provider = OpenAIProvider()
+        assert provider.billing_model(MODEL_TIERS["fast"]) == provider.MODELS["fast"]
+        assert provider.billing_model(MODEL_TIERS["deep"]) == provider.MODELS["deep"]
+
     def test_separe_la_consigne_de_la_demande(self, monkeypatch):
         import requests
         from core.llm_client import OpenAIProvider
@@ -339,9 +345,35 @@ def test_mistral_provider_requests_a_json_object(monkeypatch):
     from core.llm_client import MistralProvider
     MistralProvider().complete("d", model="m", max_tokens=5, json_mode=True)
     assert sent["response_format"] == {"type": "json_object"}
+    assert sent["retries"] is None
     sent.clear()
     MistralProvider().complete("d", model="m", max_tokens=5)
     assert "response_format" not in sent
+    assert sent["retries"] is None
+
+
+def test_mistral_provider_reports_the_model_returned_by_the_api(monkeypatch):
+    import sys
+    import types
+
+    class _Chat:
+        def complete(self, **kwargs):
+            choice = types.SimpleNamespace(
+                message=types.SimpleNamespace(content='ok'), finish_reason='stop'
+            )
+            return types.SimpleNamespace(
+                choices=[choice], usage=None, model='provider-fallback-model'
+            )
+
+    class _Mistral:
+        def __init__(self, **kwargs):
+            self.chat = _Chat()
+
+    monkeypatch.setitem(sys.modules, 'mistralai', types.SimpleNamespace(Mistral=_Mistral))
+    monkeypatch.setenv('MISTRAL_API_KEY', 'test-key')
+    from core.llm_client import MistralProvider
+    result = MistralProvider().complete('d', model='requested-model', max_tokens=5)
+    assert result.model == 'provider-fallback-model'
 
 
 def test_psychologue_analysis_calls_request_json(monkeypatch):

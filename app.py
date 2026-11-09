@@ -8,13 +8,18 @@ import datetime
 import logging
 import threading
 from functools import wraps
+from urllib.parse import urlsplit
 
 # Sans handler configuré, logger.info() (utilisé par safe_log_event, y compris
 # les logs OAuth) est silencieusement ignoré par le logging root de Python —
 # rien n'apparaît dans les logs Render ni en local. On configure explicitement
 # un handler stdout au niveau INFO pour tous les loggers de l'app.
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(name)s %(message)s')
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for, make_response, send_file, Response
+# httpx logs full request URLs at INFO. Supabase filters can contain user IDs
+# and hashed contact identifiers, so keep those transport details out of the
+# application logs while preserving warnings and errors.
+logging.getLogger('httpx').setLevel(logging.WARNING)
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, make_response, send_file, Response, g
 from dotenv import load_dotenv
 
 _env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
@@ -26,6 +31,26 @@ prefer_ipv4()
 
 from core.orchestrator import Gabriel
 from core.llm_client import model_for_tier as _llm_model_for_tier
+from core.admin_access import is_admin_user
+from core.llm_budget import (
+    MistralBudgetConfigurationError,
+    MistralBudgetGuard,
+    validation_budget_enabled,
+)
+from core.provider_cost_guard import (
+    FinancialGuardError,
+    FinancialLimitExceeded,
+    FinancialReplayBlocked,
+    create_financial_operation,
+    begin_provider_attempt,
+    load_financial_config,
+    paid_provider_calls_enabled,
+    provider_cost_guard_enabled,
+    request_fingerprint,
+    settle_provider_failure,
+    settle_provider_success,
+)
+from core.credit_ledger import credit_ledger_enabled
 from core.memory import GabrielMemory
 from core.business_context import (
     get_user_profile as _get_user_profile,
@@ -88,9 +113,47 @@ _is_production = (
     or bool(os.environ.get('RENDER'))
     or os.environ.get('RENDER_EXTERNAL_URL', '').startswith('https://')
 )
+
+# Gabriel Prospect reste disponible dans le dépôt pour un éventuel retour,
+# mais il ne fait plus partie du produit lancé. Même si la variable de test
+# subsistait par erreur sur le serveur, le module ne peut pas s'activer en prod.
+_PROSPECT_ENABLED = (
+    not _is_production
+    and os.environ.get('GABRIEL_ENV', '').lower() != 'production'
+    and os.environ.get('GABRIEL_PROSPECT_ENABLED', 'false').lower() == 'true'
+)
+if _PROSPECT_ENABLED:
+    from gabriel_prospect.api import prospect_bp
+    from gabriel_prospect.client import init_prospect_storage as _init_prospect_storage
+
 app.config['SESSION_COOKIE_SECURE']   = _is_production
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
+
+@app.before_request
+def _reject_cross_origin_state_change():
+    """Bloque les soumissions navigateur provenant d'un autre site.
+
+    SameSite protège déjà le cookie dans les navigateurs modernes, mais ce
+    contrôle couvre aussi le login CSRF et les navigateurs/proxies atypiques.
+    Les webhooks et clients serveur sans en-tête Origin/Referer restent admis.
+    """
+    if request.method not in {'POST', 'PUT', 'PATCH', 'DELETE'}:
+        return None
+    source = request.headers.get('Origin') or request.headers.get('Referer')
+    if not source:
+        return None
+    try:
+        parsed = urlsplit(source)
+        expected_scheme = request.scheme.lower()
+        expected_host = request.host.lower()
+        if parsed.scheme.lower() == expected_scheme and parsed.netloc.lower() == expected_host:
+            return None
+    except (TypeError, ValueError):
+        pass
+    safe_log_event('cross_origin_request_blocked', metadata={'path': request.path})
+    return jsonify({'success': False, 'error': 'Origine de requête refusée.'}), 403
 
 # Render (et tout reverse proxy HTTPS) transmet les requêtes en HTTP interne.
 # Sans ProxyFix, url_for(..., _external=True) génère http:// → Google OAuth refuse.
@@ -124,6 +187,29 @@ def production_safety_problems(env=None):
     secret = str(env.get('FLASK_SECRET_KEY', ''))
     if len(secret) < 24 or secret.startswith('VOTRE_'):
         problems.append("FLASK_SECRET_KEY est trop courte ou reste celle de l'exemple : les sessions pourraient être falsifiées.")
+    accounts_enabled = str(env.get('GABRIEL_ACCOUNTS_ENABLED', 'false')).lower() == 'true'
+    if accounts_enabled:
+        if not str(env.get('SUPABASE_URL', '') or '').strip():
+            problems.append("GABRIEL_ACCOUNTS_ENABLED exige SUPABASE_URL : aucun compte ne doit utiliser le disque éphémère de Render.")
+        if not str(env.get('SUPABASE_KEY', '') or '').strip():
+            problems.append("GABRIEL_ACCOUNTS_ENABLED exige SUPABASE_KEY pour le stockage serveur des comptes.")
+    if paid_provider_calls_enabled(env):
+        try:
+            financial_config = load_financial_config(env)
+            if financial_config is None:
+                problems.append(
+                    "GABRIEL_PAID_AI_ENABLED exige "
+                    "GABRIEL_PROVIDER_COST_GUARD_ENABLED=true."
+                )
+        except FinancialGuardError as exc:
+            problems.append(
+                "GABRIEL_PAID_AI_ENABLED exige un ledger et un garde financier "
+                f"completement configures : {exc}"
+            )
+        if not str(env.get('SUPABASE_URL', '') or '').strip():
+            problems.append("SUPABASE_URL est requis pour les plafonds financiers persistants.")
+        if not str(env.get('SUPABASE_SERVICE_ROLE_KEY', '') or '').strip():
+            problems.append("SUPABASE_SERVICE_ROLE_KEY est requis pour les RPC financieres.")
     return problems
 
 
@@ -136,6 +222,8 @@ if _is_production and os.environ.get('AUTH_ENABLED', 'false').lower() != 'true':
 
 init_auth(app)
 app.register_blueprint(auth_bp)
+if _PROSPECT_ENABLED:
+    app.register_blueprint(prospect_bp)
 
 
 @app.context_processor
@@ -151,7 +239,197 @@ def _inject_credits():
     uid = session.get('user_id')
     if not uid:
         return {'nav_credits': None}
-    return {'nav_credits': _db.get_user_credits(uid)}
+    try:
+        return {'nav_credits': _db.get_user_credits(uid)}
+    except _db.CreditError:
+        return {'nav_credits': None}
+
+
+def _credit_error_response(user_id, error):
+    """Fail closed without exposing storage details or pretending a zero balance."""
+    if isinstance(error, _db.CreditAccountNotFound):
+        safe_log_event(
+            'credit_account_not_provisioned',
+            user_id=user_id,
+        )
+        return jsonify({
+            'success': False,
+            'error': "Le compte de crédits n'est pas encore provisionné.",
+            'error_code': 'credit_account_not_provisioned',
+        }), 409
+
+    safe_log_event(
+        'credit_store_unavailable',
+        user_id=user_id,
+        metadata={'failure_type': type(error).__name__},
+    )
+    return jsonify({
+        'success': False,
+        'error': 'Le solde de crédits est temporairement indisponible. Réessayez dans quelques instants.',
+        'error_code': 'credits_unavailable',
+    }), 503
+
+
+_FINANCIAL_ENDPOINTS = {
+    'analyze': 'psychologue',
+    'launch_psychologue_cross_analysis': 'psychologue_cross',
+    'strategize': 'stratege',
+    'creator_generate': 'createur',
+    'creator_refine': 'createur_refine',
+    'context_chat': 'context_chat',
+    'voice_transcribe': 'voice_stt',
+    'voice_speak': 'voice_tts',
+    'strategy_session_step': 'strategy_session',
+    'strategy_chat': 'strategy_chat',
+    'orchestrator_chat': 'orchestrator',
+}
+
+
+def _financial_error_response(exc):
+    if isinstance(exc, FinancialLimitExceeded):
+        code = 402
+    elif isinstance(exc, FinancialReplayBlocked):
+        code = 409
+    else:
+        code = 503
+    error_code = (
+        'financial_limit_reached' if code == 402 else
+        'financial_operation_replayed' if code == 409 else
+        'financial_guard_unavailable'
+    )
+    message = (
+        "Le plafond financier de cette operation est atteint."
+        if code == 402 else
+        "Cette operation a deja ete soumise. Aucun nouvel appel IA n'a ete lance."
+        if code == 409 else
+        "La securite financiere ne peut pas etre verifiee. Aucun appel IA n'a ete lance."
+    )
+    safe_log_event('financial_guard_blocked', user_id=(current_user() or {}).get('user_id'), error=exc)
+    return make_response(jsonify({
+        'success': False,
+        'error': message,
+        'error_code': error_code,
+        'message': message,
+    }), code)
+
+
+@app.before_request
+def _prepare_financial_operation():
+    """Bind a lazy operation to every route capable of paid provider I/O.
+
+    With the guard enabled, an unlisted provider call is rejected by the common
+    provider boundary.  The operation only reserves credits immediately before
+    the first physical attempt, so validation-only responses remain free.
+    """
+    operation_type = _FINANCIAL_ENDPOINTS.get(request.endpoint)
+    if not operation_type:
+        return None
+    if request.endpoint == 'analyze':
+        body = request.get_json(silent=True) or {}
+        if bool(body.get('preview_only')):
+            operation_type = 'psychologue_preview'
+    idempotency_key = (request.headers.get('Idempotency-Key') or '').strip()[:128]
+    if provider_cost_guard_enabled() and not idempotency_key:
+        return make_response(jsonify({
+            'success': False,
+            'error': "Cette action sécurisée n'a pas pu démarrer. Rechargez la page puis réessayez.",
+            'error_code': 'idempotency_key_required',
+            'message': "Une cle Idempotency-Key stable est requise avant tout appel payant.",
+        }), 428)
+    try:
+        user_id = (current_user() or {}).get('user_id')
+        operation = create_financial_operation(
+            user_id=user_id,
+            operation_type=operation_type,
+            idempotency_key=idempotency_key or None,
+            request_hash=request_fingerprint(
+                request.method, request.path, request.get_data(cache=True)
+            ),
+        )
+        g.financial_operation = operation
+        g.financial_operation_binding = operation.bind()
+        g.financial_operation_binding.__enter__()
+        g.financial_operation_detached = False
+    except FinancialGuardError as exc:
+        return _financial_error_response(exc)
+    return None
+
+
+@app.after_request
+def _finalize_financial_operation(response):
+    operation = getattr(g, 'financial_operation', None)
+    if operation is None or getattr(g, 'financial_operation_detached', False):
+        return response
+    try:
+        if response.status_code < 400:
+            operation.finalize_success()
+        else:
+            operation.finalize_failure()
+    except FinancialGuardError as exc:
+        return _financial_error_response(exc)
+    finally:
+        binding = getattr(g, 'financial_operation_binding', None)
+        if binding is not None:
+            binding.__exit__(None, None, None)
+            g.financial_operation_binding = None
+    return response
+
+
+@app.teardown_request
+def _teardown_financial_operation(error):
+    operation = getattr(g, 'financial_operation', None)
+    binding = getattr(g, 'financial_operation_binding', None)
+    if operation is not None and error is not None and not getattr(g, 'financial_operation_detached', False):
+        try:
+            operation.finalize_failure()
+        except FinancialGuardError as exc:
+            safe_log_event('financial_finalize_error', user_id=(current_user() or {}).get('user_id'), error=exc)
+    if binding is not None:
+        if error is None:
+            binding.__exit__(None, None, None)
+        else:
+            binding.__exit__(type(error), error, getattr(error, '__traceback__', None))
+        g.financial_operation_binding = None
+
+
+def _financial_background_target(target, success_predicate):
+    operation = getattr(g, 'financial_operation', None)
+    if operation is None:
+        return target
+    g.financial_operation_detached = True
+    operation.detached = True
+
+    def run():
+        with operation.bind():
+            try:
+                target()
+                if success_predicate():
+                    operation.finalize_success()
+                else:
+                    operation.finalize_failure()
+            except BaseException:
+                operation.finalize_failure()
+                raise
+    return run
+
+
+def _deduct_legacy_credits(user_id, credits, reason):
+    """Keep the historical balance until the guarded ledger is activated.
+
+    Both flags are required for cutover.  This prevents a double debit when the
+    new operation is captured while preserving today's behaviour by default.
+    """
+    if provider_cost_guard_enabled() and credit_ledger_enabled():
+        return None
+    return _db.deduct_credits(user_id, credits, reason=reason)
+
+
+def _has_enough_operation_credits(user_id, credits, email=None):
+    if provider_cost_guard_enabled() and credit_ledger_enabled():
+        # The authoritative atomic check happens in gabriel_credit_reserve
+        # immediately before the first physical provider attempt.
+        return True
+    return _db.has_enough_credits(user_id, credits, email=email)
 
 
 # ── Cache-busting des assets statiques ────────────────────────────────────────
@@ -325,6 +603,8 @@ def health_ready():
 # Passer le client Supabase à db.py
 from api.auth import _supabase as _sb_client
 _db.init_db(_sb_client)
+if _PROSPECT_ENABLED:
+    _init_prospect_storage()
 gabriel = Gabriel()
 memory  = GabrielMemory()
 # Le pipeline Cross n'est qu'un adaptateur autour du Psychologue existant : il
@@ -343,6 +623,67 @@ try:
 except ImportError:
     def _get_mistral_client(timeout_ms=60_000):
         raise RuntimeError("mistralai non disponible")
+
+
+def _budgeted_mistral_complete(client, *, model, max_tokens, messages, label):
+    """Single guarded path for direct Mistral SDK calls outside llm_client."""
+    guard = MistralBudgetGuard.from_env()
+    reservation = None
+    if guard:
+        guard.require_mistral_provider('mistral')
+        reservation = guard.reserve(
+            model=model,
+            input_text=json.dumps(messages, ensure_ascii=False, separators=(',', ':')),
+            max_output_tokens=max_tokens,
+            label=label,
+            attempt_number=1,
+        )
+    financial_attempt = begin_provider_attempt(
+        provider='mistral',
+        model=model,
+        input_text=json.dumps(messages, ensure_ascii=False, separators=(',', ':')),
+        max_output_tokens=max_tokens,
+        label=label,
+    )
+    try:
+        response = client.chat.complete(
+            model=model,
+            max_tokens=max_tokens,
+            messages=messages,
+            # A hidden SDK retry would create another billable request without
+            # a second reservation. This direct path never retries internally.
+            retries=None,
+        )
+    except BaseException as exc:
+        settle_provider_failure(financial_attempt)
+        if guard and reservation:
+            guard.mark_uncertain(reservation, type(exc).__name__)
+        raise
+
+    usage = getattr(response, 'usage', None) or {}
+
+    def _usage_value(*names):
+        for name in names:
+            value = usage.get(name) if isinstance(usage, dict) else getattr(usage, name, None)
+            if value is not None:
+                return value
+        return None
+
+    if guard and reservation:
+
+        guard.settle(
+            reservation,
+            response_model=getattr(response, 'model', None) or model,
+            input_tokens=_usage_value('prompt_tokens', 'input_tokens'),
+            output_tokens=_usage_value('completion_tokens', 'output_tokens'),
+        )
+    settle_provider_success(
+        financial_attempt,
+        response_model=getattr(response, 'model', None) or model,
+        input_tokens=_usage_value('prompt_tokens', 'input_tokens'),
+        output_tokens=_usage_value('completion_tokens', 'output_tokens'),
+    )
+    return response
 
 # ── RAG — lazy loading (Render : le port doit s'ouvrir avant tout chargement) ─
 # Par défaut, AUCUN index n'est chargé au démarrage : rag.search() charge et
@@ -618,7 +959,7 @@ def stratege_page():
         folder_analysis_id = (_f or {}).get('analysis_id', '') or ''
     _ux_row = _db.get_ux_settings('stratege') or {}
     _ux_published = sanitize_strategy_ux(_ux_row.get('published'))
-    _is_studio_admin = ((current_user() or {}).get('email', '').lower() in _db.ADMIN_EMAILS)
+    _is_studio_admin = is_admin_user(current_user())
     resp = make_response(render_template(
         'stratege.html',
         current_user=current_user(),
@@ -638,7 +979,7 @@ def stratege_page():
 
 def _strategy_studio_admin():
     user = current_user() or {}
-    return user if user.get('email', '').strip().lower() in _db.ADMIN_EMAILS else None
+    return user if is_admin_user(user) else None
 
 
 @app.route('/studio/stratege')
@@ -734,31 +1075,6 @@ def analyze():
     if not ok:
         return jsonify({'error': err}), 400
 
-    # Vérifier la limite d'usage du plan gratuit
-    _cu_early = current_user() or {}
-    uid_early   = _cu_early.get('user_id')
-    email_early = _cu_early.get('email', '')
-    if uid_early:
-        usage = _db.check_usage_limit(uid_early, email=email_early)
-        if not usage.get('allowed'):
-            return jsonify({
-                'error':            'limit_reached',
-                'upgrade_required': True,
-                'analyses_used':    usage.get('used', 0),
-                'analyses_limit':   usage.get('limit', _db.FREE_ANALYSES_LIMIT),
-                'plan':             usage.get('plan', 'free'),
-            }), 403
-
-    # Vérifier le solde de crédits (transversal aux 3 agents — voir api/db.py)
-    _cost_psycho = _db.CREDIT_COSTS['psychologue']
-    if uid_early and not _db.has_enough_credits(uid_early, _cost_psycho, email=email_early):
-        return jsonify({
-            'error':            'credits_insufficient',
-            'upgrade_required': True,
-            'credits':          _db.get_user_credits(uid_early),
-            'cost':             _cost_psycho,
-        }), 402
-
     comments      = []
     video_context = ""
     video_title   = ""
@@ -812,6 +1128,40 @@ def analyze():
                 'video_context': video_context,
                 'source_label': source_label,
             })
+
+        # Un aperçu ne consomme ni quota ni crédit. Les contrôles payants sont
+        # donc effectués seulement après validation et extraction de la source,
+        # juste avant de créer le vrai job d'analyse.
+        _cu_early = current_user() or {}
+        uid_early = _cu_early.get('user_id')
+        email_early = _cu_early.get('email', '')
+        if uid_early:
+            usage = _db.check_usage_limit(uid_early, email=email_early)
+            if not usage.get('allowed'):
+                return jsonify({
+                    'error': 'limit_reached',
+                    'upgrade_required': True,
+                    'analyses_used': usage.get('used', 0),
+                    'analyses_limit': usage.get('limit', _db.FREE_ANALYSES_LIMIT),
+                    'plan': usage.get('plan', 'free'),
+                }), 403
+
+        _cost_psycho = _db.CREDIT_COSTS['psychologue']
+        try:
+            _psycho_has_credits = (
+                not uid_early
+                or _has_enough_operation_credits(uid_early, _cost_psycho, email=email_early)
+            )
+            _psycho_balance = _db.get_user_credits(uid_early) if uid_early and not _psycho_has_credits else None
+        except _db.CreditError as exc:
+            return _credit_error_response(uid_early, exc)
+        if not _psycho_has_credits:
+            return jsonify({
+                'error': 'credits_insufficient',
+                'upgrade_required': True,
+                'credits': _psycho_balance,
+                'cost': _cost_psycho,
+            }), 402
 
         # ── Job en arrière-plan : le LLM peut prendre 30-120 s ──────────────
         uid         = (current_user() or {}).get('user_id')
@@ -934,7 +1284,7 @@ def analyze():
                 print(f"[PSYCHO_TIMING] total_request={time.perf_counter()-_t_request_start:.2f}s")
 
                 if uid:
-                    _db.deduct_credits(uid, _cost_psycho, reason='psychologue')
+                    _deduct_legacy_credits(uid, _cost_psycho, reason='psychologue')
                 if job_id in _jobs:
                     _jobs[job_id]['result'] = result
                     _jobs[job_id]['status'] = 'done'
@@ -958,9 +1308,17 @@ def analyze():
                                    error_message="Erreur d'analyse. Réessayez dans quelques instants.")
                 print(f"[JOB] failed job_id={job_id}")
 
-        threading.Thread(target=_run_analysis, daemon=True).start()
+        threading.Thread(
+            target=_financial_background_target(
+                _run_analysis,
+                lambda: (_jobs.get(job_id) or {}).get('status') == 'done',
+            ),
+            daemon=True,
+        ).start()
         return jsonify({'job_id': job_id, 'status': 'running'})
 
+    except FinancialGuardError as exc:
+        return _financial_error_response(exc)
     except SocialCollectionError as e:
         # Cause identifiée : l'utilisateur apprend s'il doit corriger son lien
         # ou réessayer plus tard, au lieu de recevoir un écran vide.
@@ -1129,11 +1487,16 @@ def launch_psychologue_cross_analysis():
 
     cost_per_source = _db.CREDIT_COSTS['psychologue']
     maximum_cost = cost_per_source * len(sources)
-    if not _db.has_enough_credits(uid, maximum_cost, email=email):
+    try:
+        _cross_has_credits = _has_enough_operation_credits(uid, maximum_cost, email=email)
+        _cross_balance = _db.get_user_credits(uid) if not _cross_has_credits else None
+    except _db.CreditError as exc:
+        return _credit_error_response(uid, exc)
+    if not _cross_has_credits:
         return jsonify({
             'error': 'credits_insufficient',
             'upgrade_required': True,
-            'credits': _db.get_user_credits(uid),
+            'credits': _cross_balance,
             'cost_per_source': cost_per_source,
             'estimated_cost': maximum_cost,
         }), 402
@@ -1314,7 +1677,7 @@ def launch_psychologue_cross_analysis():
                 if isinstance(item, dict) and not item.get('analysis_cache_hit')
             )
             if billable_sources:
-                _db.deduct_credits(uid, cost_per_source * billable_sources, reason='psychologue_cross')
+                _deduct_legacy_credits(uid, cost_per_source * billable_sources, reason='psychologue_cross')
             completed_status = cross_result.get('status', 'completed')
             persisted = _db.update_cross_analysis(
                 cross_analysis_id, uid, status=completed_status,
@@ -1374,7 +1737,14 @@ def launch_psychologue_cross_analysis():
                 _db.update_job(job_id, user_id=uid, status='failed', step=step, completed=True,
                                error_message='Erreur lors de la Cross Analyse.')
 
-    threading.Thread(target=_run_cross_analysis, daemon=True, name=f'cross-{job_id}').start()
+    threading.Thread(
+        target=_financial_background_target(
+            _run_cross_analysis,
+            lambda: (_jobs.get(job_id) or {}).get('status') == 'done',
+        ),
+        daemon=True,
+        name=f'cross-{job_id}',
+    ).start()
     return jsonify({
         'success': True,
         'analysis_mode': 'cross',
@@ -1683,12 +2053,25 @@ def strategize():
     _cu_strat_early = current_user() or {}
     _uid_strat_credits = _cu_strat_early.get('user_id')
     _cost_stratege = _db.CREDIT_COSTS['stratege']
-    if _uid_strat_credits and not _db.has_enough_credits(
-            _uid_strat_credits, _cost_stratege, email=_cu_strat_early.get('email', '')):
+    try:
+        _strategy_has_credits = (
+            not _uid_strat_credits
+            or _has_enough_operation_credits(
+                _uid_strat_credits, _cost_stratege,
+                email=_cu_strat_early.get('email', ''),
+            )
+        )
+        _strategy_balance = (
+            _db.get_user_credits(_uid_strat_credits)
+            if _uid_strat_credits and not _strategy_has_credits else None
+        )
+    except _db.CreditError as exc:
+        return _credit_error_response(_uid_strat_credits, exc)
+    if not _strategy_has_credits:
         return jsonify({
             'error':            'credits_insufficient',
             'upgrade_required': True,
-            'credits':          _db.get_user_credits(_uid_strat_credits),
+            'credits':          _strategy_balance,
             'cost':             _cost_stratege,
         }), 402
 
@@ -1739,7 +2122,7 @@ def strategize():
             if strategy_id:
                 user_mem.add_case(strategy_id, psycho_data, strategie, effective_profile, user_id=uid)
             if uid:
-                _db.deduct_credits(uid, _cost_stratege, reason='stratege_cb')
+                _deduct_legacy_credits(uid, _cost_stratege, reason='stratege_cb')
             return jsonify({**strategie, 'success': True, 'strategy_id': strategy_id, 'memory': memory_summary})
         except Exception as e:
             import traceback; traceback.print_exc()
@@ -1841,7 +2224,7 @@ def strategize():
                 _db.update_folder(folder_id_strat, uid, strategy_id=strategy_id, step='stratege')
             user_mem.add_case(analysis_id, psycho_data, strat_data, effective_profile, user_id=uid)
             if uid:
-                _db.deduct_credits(uid, _cost_stratege, reason='stratege')
+                _deduct_legacy_credits(uid, _cost_stratege, reason='stratege')
             job_result = {'success': True, 'data': result, 'memory': memory_summary,
                           'strategy_id': strategy_id, 'analysis_id': analysis_id}
             _jobs[job_id] = {'status': 'done', 'result': job_result, 'user_id': uid}
@@ -1856,7 +2239,12 @@ def strategize():
                            error_message='Erreur lors de la génération stratégique.')
             safe_log_event('strategize_error', user_id=uid, error=e)
 
-    threading.Thread(target=_run, daemon=True).start()
+    threading.Thread(
+        target=_financial_background_target(
+            _run, lambda: (_jobs.get(job_id) or {}).get('status') == 'done'
+        ),
+        daemon=True,
+    ).start()
     return jsonify({'job_id': job_id, 'status': 'running'})
 
 
@@ -1927,18 +2315,37 @@ def _resolve_psycho(data, uid):
 
 
 def _resolve_strategy(data, uid):
-    """Résout la stratégie depuis le body, un strategy_id, ou le dossier lié — jamais laissée vide si disponible."""
+    """Résout une stratégie appartenant à l'utilisateur et au dossier demandé.
+
+    Les anciens clients peuvent encore fournir une stratégie embarquée ou un
+    ``strategy_id`` sans dossier. Dès qu'un ``folder_id`` est présent, le lien
+    dossier → stratégie devient toutefois obligatoire : cela empêche un onglet
+    ancien de réutiliser silencieusement le contexte d'un autre dossier.
+    """
     strategy = data.get('strategy') or data.get('strategie_data') or {}
+    folder_id = str(data.get('folder_id') or '').strip()
+    strategy_id = str(data.get('strategy_id') or '').strip()
+    folder = _db.get_folder_by_id(folder_id, uid) if folder_id else None
+    if folder_id and not folder:
+        return {}
+    linked_strategy_id = str((folder or {}).get('strategy_id') or '').strip()
+    if folder_id and strategy_id and strategy_id != linked_strategy_id:
+        return {}
+    if folder_id and strategy and not linked_strategy_id:
+        return {}
+    if folder_id and strategy:
+        # Avec un dossier, le body n'est jamais une source de vérité : on
+        # recharge la stratégie persistée et liée au dossier.
+        strategy = {}
+        strategy_id = linked_strategy_id
     if strategy:
         return strategy
-    strategy_id = str(data.get('strategy_id') or '').strip()
-    folder_id   = str(data.get('folder_id') or '').strip()
-    if not strategy_id and folder_id:
-        folder = _db.get_folder_by_id(folder_id, uid)
-        strategy_id = (folder or {}).get('strategy_id', '')
+    if not strategy_id:
+        strategy_id = linked_strategy_id
     if strategy_id:
         s = _db.get_strategy_by_id(strategy_id, uid)
-        if s:
+        stored_folder_id = str((s or {}).get('folder_id') or '').strip()
+        if s and (not folder_id or not stored_folder_id or stored_folder_id == folder_id):
             return s.get('strategy_result') or {}
     return {}
 
@@ -1985,11 +2392,21 @@ def creator_generate():
         return jsonify({'error': err}), 400
 
     _cost_createur = _db.CREDIT_COSTS['createur']
-    if uid and not _db.has_enough_credits(uid, _cost_createur, email=(current_user() or {}).get('email', '')):
+    try:
+        _creator_has_credits = (
+            not uid
+            or _has_enough_operation_credits(
+                uid, _cost_createur, email=(current_user() or {}).get('email', ''),
+            )
+        )
+        _creator_balance = _db.get_user_credits(uid) if uid and not _creator_has_credits else None
+    except _db.CreditError as exc:
+        return _credit_error_response(uid, exc)
+    if not _creator_has_credits:
         return jsonify({
             'error':            'credits_insufficient',
             'upgrade_required': True,
-            'credits':          _db.get_user_credits(uid),
+            'credits':          _creator_balance,
             'cost':             _cost_createur,
         }), 402
 
@@ -2005,6 +2422,11 @@ def creator_generate():
     # demandée. Sans indication (anciens clients), comportement historique.
     psycho_data = {} if data.get('use_psycho') is False else _resolve_psycho(data, uid)
     strategy    = {} if data.get('use_strategy') is False else _resolve_strategy(data, uid)
+    if data.get('use_strategy') is True and not strategy:
+        return jsonify({
+            'error': 'strategy_context_mismatch',
+            'message': "La stratégie d’Ariane n’est pas liée à ce dossier. Rechargez le dossier avant de générer.",
+        }), 409
 
     # Le persona utilisé doit être l'objet exact généré par le Psychologue pour
     # cette analyse — jamais celui envoyé par le client. Le nom sert seulement
@@ -2114,7 +2536,7 @@ def creator_generate():
         try:
             result = _job()
             if uid:
-                _db.deduct_credits(uid, _cost_createur, reason='createur')
+                _deduct_legacy_credits(uid, _cost_createur, reason='createur')
             _jobs[job_id] = {'status': 'done', 'result': result, 'user_id': uid}
             _db.update_job(job_id, user_id=uid, status='completed',
                            progress=100, step='termine',
@@ -2129,7 +2551,12 @@ def creator_generate():
                            error_message='Erreur génération contenu.')
             safe_log_event('creator_error', user_id=uid, error=e)
 
-    threading.Thread(target=_run, daemon=True).start()
+    threading.Thread(
+        target=_financial_background_target(
+            _run, lambda: (_jobs.get(job_id) or {}).get('status') == 'done'
+        ),
+        daemon=True,
+    ).start()
     return jsonify({'job_id': job_id, 'status': 'running'})
 
 
@@ -2576,7 +3003,10 @@ def credits():
     de navigation après chaque génération (voir gbRefreshCredits() dans
     base.html)."""
     uid = (current_user() or {}).get('user_id')
-    return jsonify({'credits': _db.get_user_credits(uid) if uid else 0})
+    try:
+        return jsonify({'credits': _db.get_user_credits(uid) if uid else 0})
+    except _db.CreditError as exc:
+        return _credit_error_response(uid, exc)
 
 
 @app.route('/memory/stats', methods=['GET'])
@@ -2593,7 +3023,7 @@ def memory_stats():
 def rag_reload():
     """Recharger les index RAG — admin uniquement."""
     user = current_user() or {}
-    if user.get('email') not in _db.ADMIN_EMAILS:
+    if not is_admin_user(user):
         return jsonify({'success': False, 'error': 'Accès refusé.', 'error_code': 'forbidden'}), 403
     data  = request.get_json(silent=True) or {}
     agent = data.get('agent', '')
@@ -3205,7 +3635,6 @@ def strategy_session_step():
 @_rl(_RL_CHAT)
 def strategy_chat():
     """Consultant stratégique IA — McKinsey/Deloitte level."""
-    from mistralai import Mistral
     data          = request.get_json(silent=True) or {}
     message       = data.get('message', '').strip()
     analysis_id   = data.get('analysis_id', '')
@@ -3220,6 +3649,10 @@ def strategy_chat():
     ok, err = validate_size(message, 'message', LIMITS['chat_message_max_chars'])
     if not ok:
         return jsonify({'error': err}), 400
+
+    # Une erreur de saisie doit rester déterministe même si le SDK IA n'est
+    # pas installé. L'import n'intervient qu'une fois le contrat validé.
+    from mistralai import Mistral
 
     # Récupérer les données psycho : payload frontend > cache > DB
     uid_chat = (current_user() or {}).get('user_id')
@@ -3375,10 +3808,12 @@ RÈGLES ABSOLUES :
 
     try:
         client = _get_mistral_client(timeout_ms=90_000)
-        response = client.chat.complete(
+        response = _budgeted_mistral_complete(
+            client,
             model=_llm_model_for_tier('deep'),
             max_tokens=1200,
             messages=messages,
+            label='strategy_chat',
         )
         return jsonify({'reply': response.choices[0].message.content.strip()})
     except Exception as e:
@@ -3510,10 +3945,13 @@ def _call_mistral_orchestrator_fallback(messages, max_output_tokens, use_web,
         })
 
     client = _get_mistral_client(timeout_ms=90_000)
-    response = client.chat.complete(
-        model=os.environ.get('MISTRAL_ORCHESTRATOR_MODEL') or _llm_model_for_tier('deep'),
+    fallback_model = os.environ.get('MISTRAL_ORCHESTRATOR_MODEL') or _llm_model_for_tier('deep')
+    response = _budgeted_mistral_complete(
+        client,
+        model=fallback_model,
         max_tokens=int(max_output_tokens),
         messages=fallback_messages,
+        label='orchestrator_fallback',
     )
     choices = getattr(response, 'choices', None) or []
     if not choices:
@@ -3554,6 +3992,10 @@ def _call_openai_orchestrator(messages, max_output_tokens, reasoning_effort,
     import requests
 
     api_key = os.environ.get('OPENAI_API_KEY', '').strip()
+    if api_key and validation_budget_enabled():
+        raise MistralBudgetConfigurationError(
+            'le mode de validation Mistral interdit le fallback vers OpenAI'
+        )
     if not api_key:
         return _call_mistral_orchestrator_fallback(
             messages=messages,
@@ -3577,17 +4019,28 @@ def _call_openai_orchestrator(messages, max_output_tokens, reasoning_effort,
     if use_web:
         payload['tools'] = [{'type': 'web_search'}]
 
-    response = requests.post(
-        'https://api.openai.com/v1/responses',
-        headers={
-            'Authorization': f'Bearer {api_key}',
-            'Content-Type': 'application/json',
-        },
-        json=payload,
-        timeout=90,
+    financial_attempt = begin_provider_attempt(
+        provider='openai',
+        model=_ORCHESTRATOR_OPENAI_MODEL,
+        input_text=json.dumps(messages, ensure_ascii=False, separators=(',', ':')),
+        max_output_tokens=int(max_output_tokens),
+        label='orchestrator_openai',
     )
-    response.raise_for_status()
-    data = response.json()
+    try:
+        response = requests.post(
+            'https://api.openai.com/v1/responses',
+            headers={
+                'Authorization': f'Bearer {api_key}',
+                'Content-Type': 'application/json',
+            },
+            json=payload,
+            timeout=90,
+        )
+        response.raise_for_status()
+        data = response.json()
+    except BaseException:
+        settle_provider_failure(financial_attempt)
+        raise
 
     parts = []
     for item in data.get('output') or []:
@@ -3600,10 +4053,17 @@ def _call_openai_orchestrator(messages, max_output_tokens, reasoning_effort,
                     parts.append(str(text))
     reply = '\n'.join(parts).strip()
     if not reply:
+        settle_provider_failure(financial_attempt)
         raise RuntimeError('Réponse OpenAI vide')
+    usage = data.get('usage') if isinstance(data.get('usage'), dict) else {}
+    settle_provider_success(
+        financial_attempt,
+        response_model=str(data.get('model') or _ORCHESTRATOR_OPENAI_MODEL),
+        input_tokens=int(usage.get('input_tokens') or 0),
+        output_tokens=int(usage.get('output_tokens') or 0),
+    )
     if not return_metadata:
         return reply
-    usage = data.get('usage') if isinstance(data.get('usage'), dict) else {}
     return {
         'reply': reply,
         'response_id': data.get('id'),
@@ -4453,7 +4913,7 @@ def stripe_checkout():
     price_id = _STRIPE_PLANS.get(plan)
 
     if not _STRIPE_SECRET or not price_id:
-        return jsonify({'error': 'Paiement non encore configuré pour ce plan. Contactez outilsagencechretienne@gmail.com.'}), 503
+        return jsonify({'error': 'Paiement non encore configuré pour ce plan. Contactez gabrielaigithub@gmail.com.'}), 503
 
     uid = (current_user() or {}).get('user_id', '')
     try:

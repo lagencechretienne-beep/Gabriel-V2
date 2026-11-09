@@ -5,13 +5,17 @@ import math
 import time
 import random
 import threading
+import logging
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 from core import llm_client as _llm
 from core.ai_json import parse_ai_json
 from core.security import wrap_untrusted_content, PROMPT_INJECTION_GUARD
+from core.provider_cost_guard import submit_with_financial_context
 from tools import registry as tool_registry
+
+_logger = logging.getLogger(__name__)
 
 # NLP Engine — couche de prétraitement linguistique et statistique
 try:
@@ -384,14 +388,55 @@ def _detect_signals_v2(text):
 # like_bonus     : log(1+likes)/10 dans le sens du sentiment
 # spam           : alpha_ratio < 0.3 sur texte court → -1.0
 #
+class AnalyzerDependencyError(RuntimeError):
+    """A required deterministic analysis dependency is unavailable."""
+
+
+_vader_init_error = None
 try:
     from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer as _VaderClass
-    _vader_singleton = _VaderClass()
-except Exception:
+except ImportError as exc:
+    _VaderClass = None
     _vader_singleton = None
+    _vader_init_error = exc
+else:
+    try:
+        _vader_singleton = _VaderClass()
+    except Exception as exc:
+        _vader_singleton = None
+        _vader_init_error = exc
+
+if _vader_singleton is None:
+    _logger.warning(
+        "Analyse de sentiment indisponible: dépendance vaderSentiment>=3.3.2 "
+        "absente ou non initialisable (%s).",
+        type(_vader_init_error).__name__ if _vader_init_error else "UnknownError",
+    )
+
+
+def analyzer_dependency_status():
+    """Return a safe diagnostic without exposing environment details."""
+    return {
+        "vader": {
+            "required": True,
+            "available": _vader_singleton is not None,
+            "error_type": (
+                type(_vader_init_error).__name__ if _vader_init_error else None
+            ),
+        }
+    }
+
+
+def _require_vader():
+    if _vader_singleton is None:
+        raise AnalyzerDependencyError(
+            "Analyse de sentiment indisponible: installez "
+            "vaderSentiment>=3.3.2 avant d'exécuter le Psychologue."
+        ) from _vader_init_error
+    return _vader_singleton
 
 def score_comments_math(comments, nlp_data, title=""):
-    vader = _vader_singleton
+    vader = _require_vader()
     relevance_scores = (nlp_data or {}).get("relevance_scores", [])
     title_keywords   = _extract_title_keywords(title)
 
@@ -1076,8 +1121,8 @@ Reponds UNIQUEMENT avec ce JSON :
     # (core/llm_client.py MODEL_TIERS) pour ne pas dégrader ce qui marche
     # déjà ailleurs. À retirer une fois le compte Mistral mis à niveau.
     with ThreadPoolExecutor(max_workers=2) as executor:
-        fut_a = executor.submit(call_llm, prompt_a, max_tokens=5000, fast=True, label="main_a")
-        fut_b = executor.submit(call_llm, prompt_b, max_tokens=7500, fast=True, label="main_b")
+        fut_a = submit_with_financial_context(executor, call_llm, prompt_a, max_tokens=5000, fast=True, label="main_a")
+        fut_b = submit_with_financial_context(executor, call_llm, prompt_b, max_tokens=7500, fast=True, label="main_b")
         data_a = _parse_json(fut_a.result())
         data_b = _parse_json(fut_b.result())
 
@@ -1287,7 +1332,7 @@ Reponds UNIQUEMENT avec ce JSON (un seul persona) :
 
     personas = []
     with ThreadPoolExecutor(max_workers=3) as executor:
-        futures = [executor.submit(_one_persona, src, mission) for src, mission in persona_briefs]
+        futures = [submit_with_financial_context(executor, _one_persona, src, mission) for src, mission in persona_briefs]
         for fut in futures:
             try:
                 personas.append(fut.result())
@@ -2597,21 +2642,21 @@ def analyze_comments(comments, brain_context="", video_context="", title="",
     _t_block = time.perf_counter()
 
     with ThreadPoolExecutor(max_workers=6) as executor:
-        fut_personas = executor.submit(
+        fut_personas = submit_with_financial_context(executor,
             _analyze_personas, filtered, brain_context, main_data, kpis,
             nlp_data=nlp_data, dashboard=dashboard)
-        fut_reco = executor.submit(
+        fut_reco = submit_with_financial_context(executor,
             _analyze_recommendations, filtered, brain_context, main_data, kpis)
-        fut_brief = executor.submit(
+        fut_brief = submit_with_financial_context(executor,
             _generate_brief, main_data, kpis, brain_context, video_context)
-        fut_livrables = executor.submit(
+        fut_livrables = submit_with_financial_context(executor,
             _generate_livrables_ia,
             filtered, brain_context, video_context,
             main_data, nlp_data, stat_deliverables, layer1_agg
         )
-        fut_interp_psycho = executor.submit(
+        fut_interp_psycho = submit_with_financial_context(executor,
             _generate_interpretation_psychologique, main_data, rag_psycho_context)
-        fut_interp_socio = executor.submit(
+        fut_interp_socio = submit_with_financial_context(executor,
             _generate_interpretation_socioculturelle, main_data, rag_socio_context)
 
         try:
