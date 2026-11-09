@@ -10,7 +10,10 @@ with attendu(t) as (values
   ('gabriel_cross_analysis_sources'),('gabriel_source_comments'),('gabriel_context_sessions'),
   ('gabriel_context_messages'),('gabriel_context_fields'),('gabriel_chat_conversations'),
   ('gabriel_chat_messages'),('gabriel_memory_cases'),('gabriel_survey_events'),('gabriel_survey_responses'),
-  ('gabriel_consent_records'),('gabriel_training_candidates'),('gabriel_ux_settings'))
+  ('gabriel_consent_records'),('gabriel_training_candidates'),('gabriel_ux_settings'),
+  ('gabriel_credit_accounts'),('gabriel_credit_grants'),('gabriel_credit_legacy_snapshots'),('gabriel_credit_reservations'),
+  ('gabriel_credit_allocations'),('gabriel_credit_provider_usage'),('gabriel_credit_ledger'),
+  ('gabriel_provider_budget_policies'),('gabriel_provider_budget_policy_events'),('gabriel_provider_budget_periods'),('gabriel_provider_budget_attempts'))
 select a.t                                                   as "table",
        case when c.oid is null then 'ECHEC : table absente'
             when not c.relrowsecurity then 'ECHEC : RLS désactivée'

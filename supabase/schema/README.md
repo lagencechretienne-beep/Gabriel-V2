@@ -15,7 +15,7 @@ avec toutes ses données (comptes, analyses, crédits). C'est préférable à un
 
 1. Supabase → **New project** (région proche de vos utilisateurs, notez le mot de passe de la base).
 2. **SQL Editor** → New query → coller le contenu de `00_ALL_IN_ONE.sql` → **Run**.
-   (Ou exécuter `01`, `02`, `03`, `04` dans cet ordre.) Rejouable sans risque.
+   (Ou exécuter `01` à `07` dans cet ordre.) Rejouable sans risque.
 3. Coller `99_verify.sql` → Run : toutes les lignes doivent afficher `ok`, et la dernière requête doit rendre **0 ligne**.
 4. **Project Settings → API** : copier l'adresse du projet (*Project URL*) et la clé **secrète** (*secret* / *service_role*).
    Jamais la clé « anon / publishable ».
@@ -35,8 +35,14 @@ avec toutes ses données (comptes, analyses, crédits). C'est préférable à un
 | Conversation et mémoire | `gabriel_chat_conversations`, `gabriel_chat_messages`, `gabriel_memory_cases` |
 | Enquêtes et conformité | `gabriel_survey_events`, `gabriel_survey_responses`, `gabriel_consent_records`, `gabriel_training_candidates` |
 | Interface | `gabriel_ux_settings` |
+| Registre de crédits (V3) | `gabriel_credit_accounts`, `_grants`, `_legacy_snapshots`, `_reservations`, `_allocations`, `_provider_usage`, `_ledger` (journal inaltérable) |
+| Budgets fournisseurs IA (V3) | `gabriel_provider_budget_policies`, `_policy_events`, `_periods`, `_attempts` |
 
-**22 tables, 4 fonctions, 7 déclencheurs, 3 liaisons en cascade.**
+**33 tables, 20 fonctions, déclencheurs `updated_at`, 3 liaisons en cascade + celles du registre de crédits.**
+
+Les fichiers `05`, `06`, `07` viennent du Release Candidate V3 de Zinsoust (commit `f7efda3`) et sont repris tels quels (seul écart : `IF NOT EXISTS` ajouté dans `06` pour pouvoir rejouer). Le `07` (accès réservé au serveur) doit toujours passer en dernier. **Gabriel Prospect n'est pas inclus** (retiré du produit lancé) : son SQL reste dans `supabase/20261012_gabriel_prospect_mvp3.sql`.
+
+`gabriel_deduct_credits` (ancien solde dans `gabriel_users.credits`) reste en place : le registre ne s'active que si `GABRIEL_PAID_AI_ENABLED`/ledger est configuré côté application. `gabriel_delete_user_data` ne touche pas au registre de crédits : c'est un journal financier à conserver.
 
 ## Les liaisons naturelles
 
