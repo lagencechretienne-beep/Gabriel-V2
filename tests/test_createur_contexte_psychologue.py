@@ -110,3 +110,48 @@ def test_un_format_inconnu_est_refuse_au_lieu_de_devenir_des_hooks(monkeypatch):
     r = client.post('/api/v2/agents/createur/generate', json={'content_type': 'script_video', 'user_request': 'Un script'})
     assert r.status_code == 400
     assert 'Format inconnu : script_video' in r.get_json()['error'] and 'youtube' in r.get_json()['error']
+
+
+STRATEGIE_CLE_EN_MAIN = {
+    'decision_centrale': 'Lancer un diagnostic matériel gratuit puis un guide personnalisé payant.',
+    'angle_positionnel': "'L’IA locale n’est pas réservée aux élites.'",
+    'social_media_decision': {'first_post_or_video_to_create': "Titre : 'J’ai testé Flux 2 sur une 1080Ti'. CTA 10-15 sec."},
+    'immediate_monetization_plan': {
+        'first_call_to_action': "Envoie-moi tes specs en MP, je te dis EXACTEMENT ce que tu peux faire. Premier rapport offert !",
+        'first_offer_to_test': "Diagnostic gratuit puis guide personnalisé.",
+    },
+}
+
+
+def test_le_brief_reprend_le_plan_d_execution_d_ariane():
+    """Avant le 09/11/2026, le script disait « pas besoin de me l'envoyer en MP » alors que la
+    stratégie demandait « envoie-moi tes specs en MP » : l'appel à l'action n'arrivait pas au rédacteur."""
+    from agents.createur import Createur
+    brief = Createur().build_writing_brief('script', 'tiktok', 'direct', '', {}, STRATEGIE_CLE_EN_MAIN, None, {}, 'Script')
+    assert "Envoie-moi tes specs en MP" in brief
+    assert "J’ai testé Flux 2 sur une 1080Ti" in brief
+    assert "Diagnostic gratuit puis guide personnalisé" in brief
+    assert "ne le contredis jamais" in brief
+
+
+def test_le_controle_qualite_detecte_si_la_strategie_est_suivie():
+    from agents.createur import Createur
+    suivi = {'texte': "Envoie-moi tes specs : le diagnostic matériel gratuit te dit exactement ce que ton PC peut faire, "
+                      "puis le guide personnalisé te montre comment l'IA locale marche avec ta configuration."}
+    ignore = {'texte': "Ton PC a un super-pouvoir caché, réveille-le tout seul avec ces trois réglages."}
+    c = Createur()
+    assert c.quality_check_content(suivi, {}, STRATEGIE_CLE_EN_MAIN, 'script')['based_on_strategy'] is True
+    assert c.quality_check_content(ignore, {}, STRATEGIE_CLE_EN_MAIN, 'script')['based_on_strategy'] is False
+    assert c.quality_check_content(suivi, {}, {}, 'script')['based_on_strategy'] is False
+
+
+def test_une_premiere_creation_sous_forme_d_objet_est_lue_proprement():
+    """Constaté le 09/11/2026 : la stratégie renvoie first_post_or_video_to_create en objet
+    ({ angle, titre, structure }) ; le Créateur ne doit pas en recopier la représentation brute."""
+    from agents.createur import Createur
+    strat = {'social_media_decision': {'first_post_or_video_to_create': {
+        'titre': "L'erreur qui te fait perdre 3h", 'angle': 'Montrer un blocage réel',
+        'structure': ['0:00-0:10 : Accroche', '0:10-0:30 : Scénario réel']}}}
+    brief = Createur().build_writing_brief('script', 'tiktok', 'direct', '', {}, strat, None, {}, 'Script')
+    assert "L'erreur qui te fait perdre 3h" in brief and '0:10-0:30 : Scénario réel' in brief
+    assert "{'" not in brief and "['" not in brief

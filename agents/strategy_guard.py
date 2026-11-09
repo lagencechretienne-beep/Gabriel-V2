@@ -211,3 +211,34 @@ def guard_strategy(strategy, sources: str, call_llm=None, parse_json=None):
     for container, key in leaves:
         container[key] = _replace_claims(container[key], amounts, percents, [])
     return work, removed
+
+
+def scrub_unsourced_amounts(doc, sources: str):
+    """Rapport du Psychologue : retire les MONTANTS (€, $) qu'aucune donnée réelle ne soutient.
+
+    Constaté le 09/11/2026 sur une vraie analyse : les personas contenaient « une config à 300 € »,
+    « 20 €/mois pour un abonnement cloud » — des exemples rédigés par le modèle, présentés comme
+    des paroles d'audience. Seuls les montants présents dans les commentaires réels (ou le titre
+    de la vidéo) sont conservés.
+
+    Volontairement limité aux montants : les pourcentages du Psychologue sont souvent des sommes
+    ou des ratios calculés à partir des mesures (« 8,3 % + 3,3 % = 11,6 % »), qu'un contrôle par
+    simple présence dans les sources détruirait à tort. Pas de réécriture par modèle ici : un appel
+    de plus, en plein plafond de requêtes, pour une simple formule d'exemple.
+    Renvoie (copie corrigée, liste des montants retirés). N'altère jamais l'original."""
+    amounts, _ = allowed_numbers(sources)
+    work = copy.deepcopy(doc)
+    removed = []
+    leaves = []
+    _leaves(work, leaves)
+
+    def money(m):
+        if all(n in amounts for n in _numbers(m.group(0))):
+            return m.group(0)
+        removed.append(m.group(0).strip())
+        return AMOUNT_PLACEHOLDER
+
+    for container, key in leaves:
+        text = _MONEY_FIRST.sub(money, container[key])
+        container[key] = _MONEY.sub(money, text)
+    return work, sorted(set(removed))

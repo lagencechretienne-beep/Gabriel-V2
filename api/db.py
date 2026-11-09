@@ -1371,7 +1371,12 @@ def upgrade_user_plan(user_id, plan):
 # reste une limite spécifique au Psychologue.
 # ─────────────────────────────────────────────────────────────────────────────
 
-DEFAULT_FREE_CREDITS = 300
+# Crédits offerts à chaque nouveau compte (phase de test public : 1500 ≈ 10 parcours complets,
+# un parcours Psychologue + Stratège + Créateur coûtant 150). Réglable sans modifier le code.
+try:
+    DEFAULT_FREE_CREDITS = max(0, int(os.environ.get('GABRIEL_FREE_CREDITS', '1500')))
+except ValueError:
+    DEFAULT_FREE_CREDITS = 1500
 
 
 class CreditError(RuntimeError):
@@ -1406,7 +1411,7 @@ CREDIT_COSTS = {
 def get_user_credits(user_id):
     """Return the persisted balance; never invent credits after a read error.
 
-    The initial 300 credits are assigned by account creation (the SQL column
+    The initial credits (DEFAULT_FREE_CREDITS) are assigned by account creation (the SQL column
     default in Supabase, or the explicit value in ``users.json``), not here.
     """
     if not user_id:

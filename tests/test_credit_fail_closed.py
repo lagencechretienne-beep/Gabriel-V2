@@ -181,16 +181,16 @@ class CreditStoreUnitTests(unittest.TestCase):
                         _db.CREDIT_COSTS['psychologue'],
                         reason='test',
                     ),
-                    220,
+                    _db.DEFAULT_FREE_CREDITS - _db.CREDIT_COSTS['psychologue'],
                 )
 
                 # Simulate another process start: provisioning must detect the
-                # existing account and must never restore its credits to 300.
+                # existing account and must never restore its credits to the default.
                 _auth._dev_user_provisioned = False
                 _auth._ensure_dev_user_row()
                 self.assertEqual(
                     _db.get_user_credits(_auth._DEV_USER['user_id']),
-                    220,
+                    _db.DEFAULT_FREE_CREDITS - _db.CREDIT_COSTS['psychologue'],
                 )
 
     def test_dev_account_is_never_provisioned_in_production(self):

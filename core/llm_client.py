@@ -123,8 +123,12 @@ class RetryPolicy:
 # (jusqu'à 6 appels simultanés), donc réessais nombreux avec backoff.
 RETRY_RESILIENT = RetryPolicy(max_attempts=6, exponential=True, jitter=True)
 
-# Politique historique de Stratège / Créateur : appels isolés, un seul réessai.
-RETRY_SIMPLE = RetryPolicy(max_attempts=2, base_delay=4.0)
+# Politique de Stratège / Créateur : appels isolés, réessais patients.
+# Constaté le 09/11/2026 : un seul réessai à 4 s ne suffisait pas face au plafond de requêtes du plan
+# Mistral (erreur 429) — la création du Créateur échouait alors que quelques secondes de patience
+# auraient suffi. Cinq essais espacés de ~8 s (≈ 35 s au plus) : ils ne coûtent rien, une requête
+# refusée n'est pas facturée.
+RETRY_SIMPLE = RetryPolicy(max_attempts=5, base_delay=8.0, jitter=True)
 
 # Aucun réessai : sites qui préfèrent échouer vite et se rabattre sur une
 # réponse de secours plutôt que faire attendre l'utilisateur (voix, rendu

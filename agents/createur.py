@@ -720,6 +720,19 @@ def _parse_json(text):
 
 # ─── Classe principale ────────────────────────────────────────────────────────
 
+
+def _a_plat(valeur) -> str:
+    """Texte lisible d'une valeur de stratégie : le modèle renvoie parfois un objet
+    ({ angle, titre, structure }) ou une liste là où l'on attend une phrase."""
+    if valeur is None:
+        return ''
+    if isinstance(valeur, dict):
+        return ' — '.join(f"{k} : {_a_plat(v)}" for k, v in valeur.items() if _a_plat(v))
+    if isinstance(valeur, (list, tuple)):
+        return ' | '.join(t for t in (_a_plat(v) for v in valeur) if t)
+    return ' '.join(str(valeur).split())
+
+
 class Createur(BaseAgent):
     """
     Agent Créateur — génère des textes et scripts marketing.
@@ -1031,6 +1044,25 @@ class Createur(BaseAgent):
                 if isinstance(eviter, list) and eviter:
                     lines.append("Sujets à éviter absolument : " + ', '.join(str(x)[:60] for x in eviter[:5]))
 
+            # Plan d'exécution d'Ariane : ce qui rend la stratégie « clé en main ». Constaté le 09/11/2026 :
+            # le script contredisait la stratégie (« envoie-moi tes specs en MP » → « pas besoin de me
+            # l'envoyer en MP ») parce que seuls l'angle et le message central arrivaient au rédacteur.
+            smd = s.get('social_media_decision') or {}
+            imp = s.get('immediate_monetization_plan') or {}
+            premiere = _a_plat(smd.get('first_post_or_video_to_create')) if isinstance(smd, dict) else ''
+            if premiere:
+                lines.append("Première création recommandée par la stratégie (à suivre, pas à réinventer) : "
+                             + premiere[:900])
+            if isinstance(imp, dict):
+                if imp.get('first_call_to_action'):
+                    lines.append("Appel à l'action à reprendre (ne le contredis jamais) : "
+                                 + _a_plat(imp['first_call_to_action'])[:300])
+                if imp.get('first_offer_to_test'):
+                    lines.append("Offre à tester, que le contenu doit préparer : "
+                                 + _a_plat(imp['first_offer_to_test'])[:300])
+            lines.append("Le contenu doit servir ce parcours de la stratégie (accroche → preuve → appel à l'action) : "
+                         "même appel à l'action, même offre, aucune consigne opposée à celle de la stratégie.")
+
         if mkt.get('positionnement_recommande'):
             lines.append(f"Positionnement recommandé : {mkt['positionnement_recommande'][:120]}")
 
@@ -1038,6 +1070,25 @@ class Createur(BaseAgent):
         return '\n'.join(lines)
 
     # ── Vérification cohérence ────────────────────────────────────────────────
+
+    @staticmethod
+    def _strategy_followed(strategy, text) -> bool:
+        """Le texte reprend-il réellement la stratégie ? Avant le 09/11/2026 on cherchait les 15
+        premiers caractères de l'angle, qui commence par un guillemet : jamais vrai en pratique.
+        On compare maintenant les mots significatifs de la décision, du message, de l'angle, de
+        l'appel à l'action et de l'offre à tester (au moins quatre mots distincts en commun)."""
+        if not strategy:
+            return False
+        imp = strategy.get('immediate_monetization_plan') or {}
+        sources = [strategy.get('decision_centrale'), strategy.get('message_central'),
+                   strategy.get('angle_positionnel')]
+        if isinstance(imp, dict):
+            sources += [imp.get('first_call_to_action'), imp.get('first_offer_to_test')]
+        mots = {m for m in re.findall(r"[a-zàâçéèêëîïôûùüÿœ]{6,}", ' '.join(_a_plat(x) for x in sources).lower())}
+        if not mots:
+            return False
+        present = set(re.findall(r"[a-zàâçéèêëîïôûùüÿœ]{6,}", str(text).lower()))
+        return len(mots & present) >= 4
 
     def quality_check_content(self, content_result, psycho_data, strategy, content_type):
         """
@@ -1067,8 +1118,7 @@ class Createur(BaseAgent):
         based_psy = any(str(f)[:20].lower() in texte_min for f in (frus[:2] + desirs[:1])) \
             or sum(1 for m in mots_audience if m in texte_min) >= 2
 
-        strat_key = (strategy or {}).get('angle_positionnel', '')
-        based_str = bool(strat_key and strat_key[:15].lower() in text.lower())
+        based_str = self._strategy_followed(strategy, text)
 
         # Contenu non générique et non IA-sounding.
         #

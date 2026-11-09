@@ -34,9 +34,9 @@ def _client(uid):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 1. Solde initial — les 300 crédits viennent d'un compte persisté
+# 1. Solde initial — les 1500 crédits viennent d'un compte persisté
 # ══════════════════════════════════════════════════════════════════════════════
-def test_get_user_credits_initial_balance_is_300(monkeypatch, tmp_path):
+def test_get_user_credits_initial_balance_is_1500(monkeypatch, tmp_path):
     uid = f'uid-credits-{uuid.uuid4().hex[:8]}'
     (tmp_path / 'users.json').write_text(
         json.dumps({uid: {'user_id': uid, 'credits': _db.DEFAULT_FREE_CREDITS}}),
@@ -44,7 +44,7 @@ def test_get_user_credits_initial_balance_is_300(monkeypatch, tmp_path):
     )
     monkeypatch.setattr(_db, '_supabase', None)
     monkeypatch.setattr(_db, '_DATA_DIR', str(tmp_path))
-    assert _db.get_user_credits(uid) == _db.DEFAULT_FREE_CREDITS == 300
+    assert _db.get_user_credits(uid) == _db.DEFAULT_FREE_CREDITS == 1500
 
 
 def test_get_user_credits_unknown_account_is_not_given_free_credits(monkeypatch, tmp_path):
@@ -185,7 +185,7 @@ def test_creator_generate_blocked_when_credits_insufficient(monkeypatch):
 
 def test_credits_route_returns_balance(monkeypatch):
     uid = 'uid-route-credits'
-    monkeypatch.setattr(_db, 'get_user_credits', lambda user_id: 300 if user_id == uid else 0)
+    monkeypatch.setattr(_db, 'get_user_credits', lambda user_id: _db.DEFAULT_FREE_CREDITS if user_id == uid else 0)
     c = _client(uid)
     r = c.get('/credits')
     assert r.status_code == 200

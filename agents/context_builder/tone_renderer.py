@@ -159,13 +159,24 @@ def _try_parse(raw: str, fallback_stance: str):
     stance       = data.get("stance") if data.get("stance") in _PACE_BY_STANCE else fallback_stance
     tone         = data.get("tone") if data.get("tone") in ("calm", "direct", "reflective", "reassuring") else "calm"
 
+    next_question = str(data.get("next_question") or "").strip()
+    # Constaté le 09/11/2026 : le modèle range sa question dans next_question et termine display_text
+    # sur « il me manque une précision cruciale. » — l'écran n'affichait que display_text, donc le
+    # testeur ne savait jamais quoi répondre. La question fait partie de ce qui est dit.
+    if next_question:
+        deja = next_question[:25].lower()
+        if deja not in display_text.lower():
+            display_text = f"{display_text}\n\n{next_question}"
+        if deja not in speech_text.lower():
+            speech_text = f"{speech_text} {next_question}"
+
     return {
         "display_text": display_text,
         "speech_text": speech_text,
         "stance": stance,
         "tone": tone,
         "strategic_observation": str(data.get("strategic_observation") or "").strip(),
-        "next_question": str(data.get("next_question") or "").strip(),
+        "next_question": next_question,
         "speech_profile": _speech_profile_for(stance),
     }
 

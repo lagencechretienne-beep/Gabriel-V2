@@ -90,3 +90,21 @@ def test_l_extracteur_distingue_une_panne_d_un_json_vide(monkeypatch):
 
     monkeypatch.setattr(ae, '_call_llm', lambda *a, **k: '{}')
     assert ae.extract_answer('identity', REPONSE, {})['failed'] is False
+
+
+def test_une_reponse_longue_est_lue_sur_toutes_les_dimensions(monkeypatch):
+    """Une réponse riche donnée au 2e tour ne doit pas être réduite à la dimension en cours."""
+    stock = FauxStockage(); stock.installer(monkeypatch)
+    stock.messages = [{'role': 'user', 'content': 'bonjour', 'dimension_key': 'identity'}]
+    appels = []
+    monkeypatch.setattr(orch.ae, 'extract_answer_freeform',
+                        lambda msg, known: appels.append('libre') or {'extracted': {'offer': 'guides PDF'}, 'rejected_vague': [], 'failed': False})
+    monkeypatch.setattr(orch.ae, 'extract_answer',
+                        lambda dim, msg, known: appels.append('ciblee') or {'extracted': {}, 'rejected_vague': [], 'failed': False})
+
+    orch.handle_message('u1', ' '.join(['mot'] * 45))
+    assert appels == ['libre']
+
+    appels.clear()
+    orch.handle_message('u1', 'Réponse courte de quelques mots seulement.')
+    assert appels == ['ciblee']

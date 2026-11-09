@@ -35,7 +35,18 @@ const VOICE_ID_KEY = 'gabriel_voice_id';
    place à des cartes typographiques simples — même donnée, présentation
    sobre. Le design fin est délégué (GPT/Lovable) sur cette base fidèle. */
 
-function esc(v) { return v == null ? '' : String(v); }
+/* Le modèle renvoie parfois un objet ({ angle, titre, structure }) ou une liste d'objets là où l'écran
+   attend du texte : « [object Object] » s'affichait dans Branding (constaté le 09/11/2026).
+   Les textes simples et les listes de textes gardent exactement leur affichage d'avant. */
+function esc(v) {
+  if (v == null) return '';
+  if (typeof v !== 'object') return String(v);
+  if (Array.isArray(v)) return v.every(x => x == null || typeof x !== 'object') ? String(v) : v.map(esc).filter(Boolean).join(' · ');
+  return Object.entries(v).map(([cle, x]) => {
+    const texte = esc(x);
+    return texte ? `${cle.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase())} : ${texte}` : '';
+  }).filter(Boolean).join(' — ');
+}
 
 function Section({ title, hint, children }) {
   return <div className="gv2-strat-section">

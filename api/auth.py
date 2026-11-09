@@ -156,6 +156,12 @@ _DEV_USER = {
 # une seule fois par démarrage de processus. Supabase conserve son DEFAULT 300
 # de colonne (voir _sb_upsert_google) ; le fallback JSON inscrit explicitement
 # la même valeur puisqu'il ne dispose pas d'un schéma avec valeur par défaut.
+
+def _free_credits():
+    """Crédits d'un nouveau compte (api.db.DEFAULT_FREE_CREDITS, réglable par GABRIEL_FREE_CREDITS)."""
+    from api.db import DEFAULT_FREE_CREDITS
+    return DEFAULT_FREE_CREDITS
+
 _dev_user_provisioned = False
 
 
@@ -324,10 +330,9 @@ def _sb_upsert_google(info):
         'created_at': now,
         'last_login': now,
     }
-    # 'credits' est fourni par le DEFAULT 300 de la colonne côté Supabase (voir
-    # supabase/credits_migration.sql) — jamais envoyé explicitement ici : tant
-    # que la migration n'a pas tourné sur l'instance Supabase, une clé
-    # inconnue dans l'insert fait échouer TOUTE création de compte (PGRST204).
+    # Crédits envoyés explicitement : le schéma (supabase/schema/01_tables.sql) crée la colonne,
+    # et la valeur ne dépend plus du DEFAULT de la base (qui valait 300 avant le 09/11/2026).
+    row['credits'] = _free_credits()
     _supabase.table(_TABLE).insert(row).execute()
     return row
 
@@ -357,7 +362,7 @@ def register_email_user(email, password, name=''):
             'created_at':    now,
             'last_login':    now,
         }
-        # Pas de 'credits' explicite ici — voir commentaire dans _sb_upsert_google.
+        row['credits'] = _free_credits()   # voir _sb_upsert_google
         _supabase.table(_TABLE).insert(row).execute()
         return row, None
     else:
@@ -374,7 +379,7 @@ def register_email_user(email, password, name=''):
             'password_hash': generate_password_hash(password, method=_PASSWORD_HASH_METHOD),
             'created_at':    now,
             'last_login':    now,
-            'credits':       300,
+            'credits':       _free_credits(),
         }
         _save_json_users(users)
         return users[uid], None
@@ -422,7 +427,7 @@ def _json_upsert_google(info):
             'name':      info.get('name', ''),
             'picture':   info.get('picture', ''),
             'created_at': now,
-            'credits':   300,
+            'credits':   _free_credits(),
         }
     users[gid]['last_login'] = now
     _save_json_users(users)

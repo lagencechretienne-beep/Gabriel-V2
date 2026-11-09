@@ -142,6 +142,24 @@ describe('Aucun déclencheur disponible : l’entretien démarre directement', (
   });
 });
 
+describe('Rapport : champs renvoyés sous forme d’objet', () => {
+  // Constaté le 09/11/2026 sur une vraie stratégie : « Premier contenu à créer » affichait
+  // « [object Object] » parce que le modèle renvoyait { angle, titre, structure }.
+  it('affiche le premier contenu à créer même quand il arrive en objet, sans « [object Object] »', async () => {
+    const strategie = { ...STRATEGIE, social_media_decision: { best_platform: 'LinkedIn',
+      first_post_or_video_to_create: { titre: 'L’erreur qui fait perdre 3h', angle: 'Montrer un blocage réel',
+        structure: ['0:00-0:10 : Accroche', '0:10-0:30 : Scénario réel'] } } };
+    global.fetch = routeFetch([
+      [/^\/strategies\/s-2$/, () => ({ json: { success: true, strategy_result: strategie } })],
+    ]);
+    render(<StrategeView workspace={WORKSPACE_DONE} />);
+    await waitFor(() => expect(screen.getByText(/Lancer une offre premium/)).toBeInTheDocument());
+    expect(document.body.textContent).not.toContain('[object Object]');
+    expect(screen.getByText(/L’erreur qui fait perdre 3h/)).toBeInTheDocument();
+    expect(screen.getByText(/0:10-0:30 : Scénario réel/)).toBeInTheDocument();
+  });
+});
+
 describe('Rapport : chaque bloc disparaît s’il est vide', () => {
   it('n’affiche pas une section dont aucun champ n’est fourni', async () => {
     global.fetch = routeFetch([

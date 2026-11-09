@@ -49,10 +49,13 @@ create table if not exists public.gabriel_users (
   google_id      text,                                    -- null pour un compte e-mail
   password_hash  text,                                    -- null pour un compte Google (pbkdf2:sha256)
   plan           text        not null default 'free',     -- free | early_access | standard | pme (posé par le webhook Stripe)
-  credits        integer     not null default 300 check (credits >= 0),
+  credits        integer     not null default 1500 check (credits >= 0),
   created_at     timestamptz not null default now(),
   last_login     timestamptz not null default now()
 );
+
+-- Projet déjà créé avant le 09/11/2026 : l'ancien défaut valait 300. Aligne sur 1500 (le serveur envoie aussi la valeur).
+alter table public.gabriel_users alter column credits set default 1500;
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- 2. ESPACES DE TRAVAIL (« dossiers »)

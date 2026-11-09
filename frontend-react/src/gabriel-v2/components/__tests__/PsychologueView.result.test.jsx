@@ -451,6 +451,46 @@ describe('Psychologie et stratégie', () => {
   });
 });
 
+describe('Stratégie du Psychologue : champs rendus sous forme d’objet', () => {
+  // Constaté le 09/11/2026 sur une vraie analyse : le modèle renvoyait
+  // positionnement = { cible, declaration } ; l'écran affichait « [object Object] ».
+  const AVEC_OBJETS = {
+    ...RESULTAT,
+    recommandations: {
+      ...RESULTAT.recommandations,
+      positionnement: { cible: 'Les orphelins techniques', declaration: 'Nous cartographions les possibles.' },
+      differenciation: { strategie: 'Célébrer les défauts', valeur_unique: 'Une communauté qui rassure' },
+      strategie_contenu: { ton: 'Technique et poétique', format: 'Vidéos courtes' },
+    },
+  };
+
+  it('n’affiche jamais « [object Object] » et montre le contenu de chaque champ', async () => {
+    await analyser(AVEC_OBJETS, 'Stratégie');
+    expect(document.body.textContent).not.toContain('[object Object]');
+    expect(screen.getByText(/Nous cartographions les possibles/)).toBeInTheDocument();
+    expect(screen.getByText(/Une communauté qui rassure/)).toBeInTheDocument();
+    expect(screen.getByText(/Technique et poétique/)).toBeInTheDocument();
+    expect(screen.getByText(/Declaration —/)).toBeInTheDocument();
+  });
+
+  it('affiche aussi le message central et la promesse quand ils arrivent en objet (onglet Synthèse)', async () => {
+    const r = { ...RESULTAT, recommandations: { ...RESULTAT.recommandations,
+      message_central: { phrase: 'Votre limite est un premier niveau.', variation: 'Autre formulation' },
+      promesse_authentique: { promesse: 'Un guide honnête', preuve: 'Cas réels' },
+      ce_qu_ils_ne_disent_pas_mais_veulent_entendre: { verite: 'Vous n’êtes pas en retard.' } } };
+    await analyser(r, 'Synthèse');
+    expect(document.body.textContent).not.toContain('[object Object]');
+    expect(screen.getByText(/Votre limite est un premier niveau/)).toBeInTheDocument();
+    expect(screen.getByText(/Un guide honnête/)).toBeInTheDocument();
+    expect(screen.getByText(/Vous n’êtes pas en retard/)).toBeInTheDocument();
+  });
+
+  it('continue d’afficher un champ qui est du texte simple', async () => {
+    await analyser({ ...RESULTAT, recommandations: { ...RESULTAT.recommandations, positionnement: 'Le guide des bricoleurs' } }, 'Stratégie');
+    expect(screen.getByText(/Le guide des bricoleurs/)).toBeInTheDocument();
+  });
+});
+
 describe('Personas', () => {
   it('montre un persona complet, pas seulement son nom', async () => {
     const user = await analyser();

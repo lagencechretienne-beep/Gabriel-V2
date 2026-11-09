@@ -66,6 +66,10 @@ _PANNE_UTTERANCE = {
 }
 
 
+# Nombre de mots à partir duquel une réponse est lue sur les 7 dimensions à la fois.
+SEUIL_REPONSE_RICHE = 40
+
+
 def _valeur_de_repli(message: str) -> str:
     """Ce qu'on retient quand l'extraction n'a rien structuré après plusieurs
     tours : la réponse elle-même, jamais une invention."""
@@ -198,7 +202,11 @@ def handle_message(user_id: str, message: str) -> dict:
         payload['rejected_vague'] = []
         return payload
 
-    if is_first_user_reply:
+    # Une réponse longue (≥ 40 mots) déborde presque toujours de la dimension en cours. Constaté le
+    # 09/11/2026 : une réponse couvrant vision, prix, ressources, contrainte et historique n'a fait
+    # avancer que 2 dimensions sur 7 — le reste était jeté, et Ariane redemandait l'objectif déjà donné.
+    reponse_riche = len(message.split()) >= SEUIL_REPONSE_RICHE
+    if is_first_user_reply or reponse_riche:
         result = ae.extract_answer_freeform(message, fields)
     else:
         known_for_dim = _fields_for_dimension(current_dim, fields)

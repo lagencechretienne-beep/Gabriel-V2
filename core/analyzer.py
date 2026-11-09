@@ -2641,6 +2641,18 @@ def analyze_comments(comments, brain_context="", video_context="", title="",
 
     _t_block = time.perf_counter()
 
+    # Sources réelles des montants : commentaires + titre. Voir scrub_unsourced_amounts.
+    _src = "\n".join([str(video_context or ""), str(title or "")] +
+                      [str(c.get('text', '')) for c in comments if isinstance(c, dict)])
+
+    def _sans_montants_inventes(doc):
+        try:
+            from agents.strategy_guard import scrub_unsourced_amounts
+            return scrub_unsourced_amounts(doc, _src)[0]
+        except Exception as exc:
+            print(f"[GABRIEL] Contrôle des montants indisponible (non bloquant) : {exc}")
+            return doc
+
     with ThreadPoolExecutor(max_workers=6) as executor:
         fut_personas = submit_with_financial_context(executor,
             _analyze_personas, filtered, brain_context, main_data, kpis,
@@ -2662,7 +2674,7 @@ def analyze_comments(comments, brain_context="", video_context="", title="",
         try:
             personas = fut_personas.result()
             print(f"[GABRIEL] Personas OK — {len(personas)}")
-            _partial('personas', personas)
+            _partial('personas', _sans_montants_inventes(personas))
         except Exception as e:
             print(f"[GABRIEL] Personas ERREUR : {e}")
         print(f"[PSYCHO_TIMING] personas={time.perf_counter()-_t_block:.2f}s")
@@ -2702,6 +2714,27 @@ def analyze_comments(comments, brain_context="", video_context="", title="",
             print(f"[GABRIEL] Interprétation socio-culturelle ERREUR (non bloquant) : {e}")
         print(f"[PSYCHO_TIMING] llm_interpretation_socio={time.perf_counter()-_t_block:.2f}s")
 
+    # ── Brief : un seul réessai, une fois les autres appels terminés. Constaté le 09/11/2026 :
+    # six « 429 » d'affilée (plafond de requêtes simultanées du plan Mistral) laissaient un résumé
+    # vide, alors qu'un appel isolé aurait passé. Le drapeau permet de le dire au lieu de le taire.
+    brief_indisponible = False
+    if not brief:
+        try:
+            time.sleep(6)
+            brief = _generate_brief(main_data, kpis, brain_context, video_context)
+            print("[GABRIEL] Brief OK (second essai)")
+        except Exception as e:
+            print(f"[GABRIEL] Brief ERREUR (second essai) : {e}")
+        brief_indisponible = not brief
+
+    # ── Montants inventés : seuls ceux des vrais commentaires ou du titre sont conservés.
+    _bundle = _sans_montants_inventes({
+        'main': main_data, 'brief': brief, 'personas': personas, 'reco': recommandations,
+        'livrables': livrables_ia, 'ip': interp_psycho, 'is': interp_socio})
+    main_data, brief, personas, recommandations = (
+        _bundle['main'], _bundle['brief'], _bundle['personas'], _bundle['reco'])
+    livrables_ia, interp_psycho, interp_socio = _bundle['livrables'], _bundle['ip'], _bundle['is']
+
     _t = _mark('llm_parallel_block', _t)
     print("[ANALYZE] llm_done")
     _progress('assemblage', 90)
@@ -2718,6 +2751,8 @@ def analyze_comments(comments, brain_context="", video_context="", title="",
     result['livrables_statistiques'] = livrables_statistiques
     result['nlp_signals']            = _nlp_signals
     result['dashboard']              = dashboard
+    if brief_indisponible:
+        _meta['brief_indisponible'] = True
     result['meta']                   = _meta
 
     # ── Clé interpretation — assemblage depuis données existantes (zéro LLM)

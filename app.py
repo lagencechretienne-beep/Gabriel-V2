@@ -500,6 +500,17 @@ else:
 
 # ── Gestionnaires d'erreurs globaux ──────────────────────────────────────────
 
+
+_MSG_IA_SATUREE = ("Le service d'IA est très sollicité en ce moment. Aucun crédit n'a été débité : "
+                   "réessayez dans une minute.")
+
+
+def _llm_message(exc, defaut):
+    """Message affiché à l'utilisateur : « IA saturée » (429/529) plutôt qu'une erreur générique."""
+    statut = getattr(exc, 'status_code', None) or getattr(exc, 'http_status', None)
+    return _MSG_IA_SATUREE if statut in (429, 529) else defaut
+
+
 @app.errorhandler(429)
 def rate_limit_handler(e):
     """Flask-Limiter retourne HTML par défaut — on force JSON pour le frontend."""
@@ -1301,11 +1312,11 @@ def analyze():
                 safe_log_event('analyze_job_error', user_id=uid, error=exc)
                 if job_id in _jobs:
                     _jobs[job_id]['status'] = 'error'
-                    _jobs[job_id]['error']  = "Erreur d'analyse. Réessayez dans quelques instants."
+                    _jobs[job_id]['error']  = _llm_message(exc, "Erreur d'analyse. Réessayez dans quelques instants.")
                 if _job_in_db:
                     _db.update_job(job_id, user_id=uid, status='failed',
                                    step=_step, completed=True,
-                                   error_message="Erreur d'analyse. Réessayez dans quelques instants.")
+                                   error_message=_llm_message(exc, "Erreur d'analyse. Réessayez dans quelques instants."))
                 print(f"[JOB] failed job_id={job_id}")
 
         threading.Thread(
@@ -2233,10 +2244,11 @@ def strategize():
                            result_data=job_result, completed=True)
         except Exception as e:
             import traceback; traceback.print_exc()
-            _jobs[job_id] = {'status': 'error', 'error': 'Erreur lors de la génération stratégique. Réessayez.', 'user_id': uid}
+            _msg = _llm_message(e, 'Erreur lors de la génération stratégique. Réessayez.')
+            _jobs[job_id] = {'status': 'error', 'error': _msg, 'user_id': uid}
             _db.update_job(job_id, user_id=uid, status='failed',
                            step='stratege', completed=True,
-                           error_message='Erreur lors de la génération stratégique.')
+                           error_message=_msg)
             safe_log_event('strategize_error', user_id=uid, error=e)
 
     threading.Thread(
@@ -2545,10 +2557,11 @@ def creator_generate():
                 _db.update_folder(folder_id, uid, creator_output_id=job_id, step='createur')
         except Exception as e:
             import traceback; traceback.print_exc()
-            _jobs[job_id] = {'status': 'error', 'error': 'Erreur génération contenu.', 'user_id': uid}
+            _msg = _llm_message(e, 'Erreur génération contenu.')
+            _jobs[job_id] = {'status': 'error', 'error': _msg, 'user_id': uid}
             _db.update_job(job_id, user_id=uid, status='failed',
                            step='creator', completed=True,
-                           error_message='Erreur génération contenu.')
+                           error_message=_msg)
             safe_log_event('creator_error', user_id=uid, error=e)
 
     threading.Thread(

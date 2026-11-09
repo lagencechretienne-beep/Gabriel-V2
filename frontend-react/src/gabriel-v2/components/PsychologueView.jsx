@@ -87,7 +87,9 @@ function esc(value) {
 // Le texte long généré par le LLM (executive_summary, noyau psychologique,
 // descriptions de persona) utilise du markdown gras/italique léger.
 function formatInline(value) {
-  const text = (Array.isArray(value) ? value.map(v => String(v ?? '')).join(' · ') : String(value ?? ''))
+  // Un objet envoyé par le modèle (au lieu d'une phrase) s'affichait « [object Object] ».
+  const text = (Array.isArray(value) ? value.map(v => itemText(v)).join(' · ')
+    : (value && typeof value === 'object') ? itemText(value) : String(value ?? ''))
     // Identifiants internes de signaux (« (cross:emotions:frustration) ») : du
     // bruit technique pour le lecteur, jamais une information.
     .replace(/\s*\((?:cross|signal|psy):[\w:.-]+\)/g, '');
@@ -493,7 +495,12 @@ function itemText(v) {
   if (v === null || v === undefined) return '';
   if (typeof v === 'string' || typeof v === 'number') return String(v);
   if (Array.isArray(v)) return v.map(itemText).filter(Boolean).join(' · ');
-  return v.token || v.bigram || v.emotion || v.label || v.nom || v.name || v.signal || '';
+  const connu = v.token || v.bigram || v.emotion || v.label || v.nom || v.name || v.signal
+    || v.phrase || v.texte || v.text;
+  if (connu) return String(connu);
+  // Objet inconnu (ex. { cible, declaration }) : on lit ses valeurs plutôt que de renvoyer du vide
+  // ou « [object Object] » (constaté le 09/11/2026 sur une vraie analyse).
+  return Object.values(v).map(itemText).filter(Boolean).join(' — ');
 }
 
 function TraitList({ items, tone }) {
@@ -515,12 +522,31 @@ function TraitGroup({ label, items, tone }) {
 }
 
 /** Une phrase attribuée à un champ nommé. */
+/** Le modèle renvoie parfois un objet ({ cible, declaration }) là où l'écran attend du texte :
+ *  « [object Object] » s'affichait dans l'onglet Stratégie (constaté le 09/11/2026).
+ *  On le met à plat en paragraphes « Libellé — texte ». */
+export function enParagraphes(valeur) {
+  if (valeur == null) return [];
+  if (typeof valeur === 'string' || typeof valeur === 'number') {
+    const t = String(valeur).trim();
+    return t ? [{ texte: t }] : [];
+  }
+  if (Array.isArray(valeur)) return valeur.flatMap(enParagraphes);
+  if (typeof valeur === 'object') {
+    return Object.entries(valeur).flatMap(([cle, v]) => {
+      const libelle = cle.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
+      return enParagraphes(v).map((p, i) => (i === 0 ? { libelle, texte: p.texte } : p));
+    });
+  }
+  return [];
+}
+
 function Statement({ label, text }) {
-  const value = String(text || '').trim();
-  if (!value) return null;
+  const paragraphes = enParagraphes(text);
+  if (!paragraphes.length) return null;
   return <div className="gv2-psy-statement">
     <div className="gv2-psy-statement-label">{label}</div>
-    <p>{formatInline(value)}</p>
+    {paragraphes.map((p, i) => <p key={i}>{p.libelle && <strong>{p.libelle} — </strong>}{formatInline(p.texte)}</p>)}
   </div>;
 }
 
@@ -1239,7 +1265,7 @@ function PsychoResult({ data, onReset, onGoToStratege, onGoToCreateur }) {
             <Statement label="Vérité de l'audience" text={recos.verite_de_l_audience} />
             {recos.message_central && <div className="gv2-psy-reco-message">
               <div className="gv2-psy-statement-label">Message central</div>
-              <blockquote>{formatInline(recos.message_central)}</blockquote>
+              <blockquote>{formatInline(itemText(recos.message_central))}</blockquote>
             </div>}
             <Statement label="Promesse authentique" text={recos.promesse_authentique} />
             <Statement label="Insight stratégique" text={recos.insight_strategique_cle} />
@@ -2236,8 +2262,8 @@ export function PsychologueView({ workspace, onWorkspaceChange, onNavigateAgent,
     if (qui) lines.push('Audience : ' + qui);
     if (insight) lines.push('Insight clé : ' + insight);
     if (action) lines.push('Action : ' + action);
-    if (recos.verite_de_l_audience) lines.push("Vérité de l'audience : " + recos.verite_de_l_audience);
-    if (recos.message_central) lines.push('Message central : ' + recos.message_central);
+    if (recos.verite_de_l_audience) lines.push("Vérité de l'audience : " + itemText(recos.verite_de_l_audience));
+    if (recos.message_central) lines.push('Message central : ' + itemText(recos.message_central));
     const motiv = (psycho.motivations_profondes || []).slice(0, 2).map(m => typeof m === 'string' ? m : JSON.stringify(m));
     if (motiv.length) lines.push('Motivations : ' + motiv.join(', '));
     const frustr = (psycho.frustrations || []).slice(0, 2).map(f => typeof f === 'string' ? f : JSON.stringify(f));
