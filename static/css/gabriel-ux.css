@@ -726,3 +726,25 @@ select {
     transition-duration: .01ms !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ADAPTATION TÉLÉPHONE — pages communes (base.html) — 10/11/2026
+   Constaté à 375 px sur « En savoir plus » : .app-main, enfant d'un conteneur flex sans min-width,
+   s'élargissait au contenu (462 px) et l'en-tête débordait à droite.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.app-main { min-width: 0; }
+@media (max-width: 768px) {
+  .app-main { max-width: 100vw; }
+  .app-header { min-width: 0; padding: 8px 12px; }
+  .header-actions { min-width: 0; flex: 0 1 auto; }
+  /* Les raccourcis larges disparaissent de l'en-tête : le menu et la page d'accueil y mènent. */
+  .header-actions > .btn, .header-actions .header-upgrade-btn { display: none; }
+  .app-content { padding: 16px 14px 32px; min-width: 0; }
+  .app-content img, .app-content video, .app-content canvas, .app-content svg { max-width: 100%; height: auto; }
+  .app-content table { display: block; max-width: 100%; overflow-x: auto; }
+  .app-content :is(h1, h2, h3, p, li) { overflow-wrap: anywhere; }
+  /* Champs : 16 px minimum, sinon iOS zoome sur la page au toucher (profil business, formulaires). */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]), select, textarea { font-size: 16px !important; }
+  a.btn, button.btn, .btn { min-height: 44px; }
+  .sidebar-toggle, .header-menu-btn, .app-header button { min-width: 40px; min-height: 40px; }
+}

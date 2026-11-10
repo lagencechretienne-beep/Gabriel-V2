@@ -86,6 +86,12 @@
       box-shadow: 0 28px 70px rgba(17,19,24,.10);
     }
     [data-theme="light"] .btn-google { background: #F8F8F7; }
+    /* Téléphone : champs à 16 px (sinon iOS zoome sur le champ au toucher) et cibles de 44-48 px. */
+    @media (max-width: 640px) {
+      .login-card .input { font-size: 16px; min-height: 48px; }
+      .login-card .btn-primary, .login-card .btn-google { min-height: 48px; font-size: 15px; }
+      .login-footer-links a { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; }
+    }
   </style>
 </head>
 <body>

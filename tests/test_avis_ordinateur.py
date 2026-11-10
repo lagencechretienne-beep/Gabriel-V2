@@ -43,3 +43,21 @@ def test_le_hero_ne_deborde_plus_sur_petit_ecran():
     assert 'grid-template-columns: minmax(0, 1fr);' in html
     assert '@media (max-width: 560px)' in html
     assert 'repeat(3, minmax(0, 1fr))' in html
+
+
+def _lire(chemin):
+    with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), chemin), encoding='utf-8') as f:
+        return f.read()
+
+
+def test_les_pages_communes_ne_debordent_plus_sur_telephone():
+    """« En savoir plus » faisait 462 px dans un écran de 375 : .app-main, enfant d'un conteneur flex, n'avait pas min-width."""
+    css = _lire('static/css/gabriel-ux.css')
+    assert '.app-main { min-width: 0; }' in css
+    assert 'font-size: 16px !important' in css          # iOS ne zoome plus sur les champs
+
+
+def test_la_connexion_a_des_champs_a_16px_et_des_cibles_tactiles():
+    html = _lire('templates/login.html')
+    assert '.login-card .input { font-size: 16px; min-height: 48px; }' in html
+    assert 'min-height: 44px' in html

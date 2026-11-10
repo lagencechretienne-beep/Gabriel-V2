@@ -18,9 +18,9 @@
   {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Gabriel.ai","applicationCategory":"BusinessApplication","operatingSystem":"Web","inLanguage":"fr","description":"IA spécialisée dans l'analyse du comportement humain à partir de signaux observables : émotions exprimées, peurs, objections, aspirations, personas et comparaison d'audiences."}
   </script>
   <script>
-    // Version sombre native : le clair n'apparaît que sur choix explicite.
-    var t = 'dark';
-    try { if (localStorage.getItem('gabriel-landing-theme') === 'light') t = 'light'; } catch (e) {}
+    // Version claire par défaut : le sombre n'apparaît que sur choix explicite.
+    var t = 'light';
+    try { if (localStorage.getItem('gabriel-landing-theme') === 'dark') t = 'dark'; } catch (e) {}
     document.documentElement.setAttribute('data-theme', t);
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('anim');
   </script>
@@ -269,6 +269,8 @@
     .anim .btn, .anim .btn-ghost, .anim .theme-toggle { transition: opacity .18s ease, transform .25s ease, border-color .25s ease; }
     .anim .btn:hover, .anim .btn-ghost:hover { transform: translateY(-2px); }
     @media (prefers-reduced-motion: reduce) { .reveal, .bar i::after { animation: none; } html { scroll-behavior: auto; } }
+    .gsap-on .reveal { animation: none; }
+    .gsap-on [data-reveal] { transition: none !important; }
 
     @media (max-width: 1180px) {
       .nav-sections { display: none; }
@@ -315,7 +317,80 @@
       .float { padding: 16px; }
       .band-intro, .step, .agent { padding-left: 4px; padding-right: 4px; }
       img, svg, video { max-width: 100%; }
+      .link, footer a, .nav-sections a { display: inline-flex; align-items: center; min-height: 44px; }
     }
+
+    /* ═══ Version épurée : blanc, clair, aéré ═════════════════════════════════
+       Même contenu, mêmes liens. On retire les grilles à filets, on double les
+       espaces et on garde une seule idée forte par écran. */
+    :root[data-theme="light"] { --ground: #ffffff; --band: #f7f7f8; --line: #ececee; --soft: #6b6e72; }
+    html.lenis, html.lenis body { height: auto; }
+    html.lenis { scroll-behavior: auto !important; }
+    .wrap { max-width: 1240px; }
+    .nav > .wrap { height: 76px; }
+    .nav { border-bottom-color: transparent !important; }
+    .nav.is-scrolled { box-shadow: 0 1px 0 var(--line); }
+    .nav-account > a:not(.btn):first-child { border-right: 0; padding-right: 0; }
+    .btn { border-radius: 999px; padding: 17px 30px; }
+    .btn-small { padding: 11px 20px; }
+    .btn-ghost { border-radius: 999px; background: transparent; box-shadow: none; padding: 15px 26px; }
+
+    /* Hero : une phrase, un geste. Le portrait devient une présence douce. */
+    :root[data-theme="light"] .hero::after { background: linear-gradient(90deg, rgba(255,255,255,.96) 0%, rgba(255,255,255,.7) 40%, rgba(255,255,255,.1) 100%); }
+    :root[data-theme="light"] .hero::before { opacity: .55; }
+    :root[data-theme="light"] .hero-copy { --ink: #141414; --soft: #5d6065; --line: #e3e4e6; --on-ink: #ffffff; color: #141414; }
+    :root[data-theme="light"] .hero-copy .btn { background: #141414; border-color: #141414; color: #ffffff; }
+    :root[data-theme="light"] .hero-copy .link { color: #141414; }
+    :root[data-theme="light"] .hero-copy .mono { color: #6b6e72; }
+    .hero .wrap { padding-top: clamp(72px, 12vh, 140px); padding-bottom: clamp(120px, 18vh, 200px); gap: clamp(48px, 7vw, 120px); }
+    h1 { font-weight: 500; margin: 28px 0 24px; }
+    .trust, .float { display: none !important; }
+    .panel { border-radius: 24px; overflow: hidden; box-shadow: 0 40px 90px -50px rgba(20,20,20,.35); background: #fff; }
+    :root[data-theme="dark"] .panel { background: var(--ground); }
+    .panel-head, .panel-foot { padding-left: 32px; padding-right: 32px; }
+    .panel-head { padding-top: 22px; padding-bottom: 22px; }
+    .cell { padding: 24px 22px; min-width: 0; }
+    .cell b { font-size: clamp(30px, 3vw, 42px); }
+    .chart { padding: 32px; }
+    .bar { margin: 4px 0; }
+    .panel-head .mono { letter-spacing: .1em; }
+
+    /* Rythme : de l'air entre les sections, plus de cases. */
+    .band { border: 0; background: transparent; }
+    .band .wrap { gap: 0 clamp(24px, 3vw, 56px); padding: 0 clamp(20px, 3.4vw, 56px); }
+    .band-intro { border-right: 0; padding: 140px 0 140px; }
+    .step { border-right: 0; padding: 140px 0 140px; }
+    .step h3 { margin: 28px 0 16px; }
+    .step p { line-height: 1.75; }
+    .split .wrap { padding-top: 140px; padding-bottom: 140px; }
+    .portrait { border-radius: 28px; overflow: hidden; }
+    .caps { gap: 12px 64px; margin: 64px 0 56px; }
+    .cap { padding: 32px 0 36px; border-top-color: var(--line); }
+    .uses .wrap { padding-top: 40px; padding-bottom: 150px; }
+    .uses-grid { border: 0; gap: 56px 48px; margin-top: 72px; }
+    .use { border: 0; padding: 0; }
+    .use strong { font-size: 20px; margin-bottom: 14px; }
+    .ext { border: 0; }
+    .ext .wrap { gap: 28px; padding: 0 clamp(20px, 3.4vw, 56px); }
+    .ext-intro { border: 0; padding: 40px 0 72px; }
+    .agent { border: 0; border-radius: 28px; background: var(--band); padding: 48px 40px 52px; }
+    .agent.is-main { background: var(--band); }
+    .agent img { border-radius: 50%; filter: grayscale(.6); }
+    .agent li { border-bottom-color: var(--line); }
+    .limits { border: 0; background: transparent; }
+    .limits .wrap { padding-top: 140px; padding-bottom: 140px; }
+    .limits ul { border-top: 0; }
+    .limits li { padding: 26px 0; }
+    .final .wrap { padding-top: 160px; padding-bottom: 180px; }
+    footer { border-top-color: var(--line); }
+    footer .wrap { padding-top: 40px; padding-bottom: 48px; }
+    .band .step:hover, .use:hover { background: transparent !important; }
+    @media (max-width: 1080px) {
+      .band-intro { padding: 96px 0 24px; } .step { padding: 40px 0; }
+      .split .wrap, .limits .wrap { padding-top: 96px; padding-bottom: 96px; }
+      .hero .wrap { padding-bottom: 96px; }
+    }
+    @media (max-width: 680px) { .agent { padding: 36px 24px 40px; border-radius: 22px; } .uses-grid { gap: 40px; } }
   </style>
 </head>
 <body>
@@ -636,5 +711,46 @@
   })();
 </script>
 {% include "_avis_ordinateur.html" %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+<script>
+  // Défilement doux (Lenis) + entrées orchestrées (GSAP). Tout est coupé si le
+  // visiteur préfère moins de mouvement, et la page reste complète sans ces scripts.
+  (function () {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!window.gsap || !window.ScrollTrigger || !window.Lenis) return;
+    gsap.registerPlugin(ScrollTrigger);
+    var lenis = new Lenis({ duration: 1.15, easing: function (t) { return Math.min(1, 1.001 - Math.pow(2, -10 * t)); } });
+    lenis.on('scroll', ScrollTrigger.update);
+    gsap.ticker.add(function (t) { lenis.raf(t * 1000); });
+    gsap.ticker.lagSmoothing(0);
+    // Les liens d'ancre passent par Lenis, avec le décalage du menu fixe.
+    document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        var id = a.getAttribute('href');
+        var cible = id.length > 1 && document.querySelector(id);
+        if (!cible) return;
+        e.preventDefault();
+        lenis.scrollTo(cible, { offset: -76 });
+      });
+    });
+    // Entrée du hero : le titre, la phrase, puis le panneau.
+    var tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+    tl.from('.hero .eyebrow', { y: 14, opacity: 0, duration: .7 })
+      .from('.hero h1', { y: 34, opacity: 0, duration: 1 }, '-=.45')
+      .from('.hero .subtitle', { y: 24, opacity: 0, duration: .9 }, '-=.7')
+      .from('.hero .hero-actions', { y: 18, opacity: 0, duration: .8 }, '-=.6')
+      .from('.hero .panel', { y: 60, opacity: 0, duration: 1.2 }, '-=.9');
+    // Portrait du hero : léger décalage au défilement (profondeur).
+    gsap.to('.hero', { '--py': '-60px', ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
+    // Les blocs apparaissent un à un, en escalier.
+    ScrollTrigger.batch('[data-reveal]', {
+      start: 'top 88%', once: true,
+      onEnter: function (els) { gsap.to(els, { opacity: 1, y: 0, duration: 1, ease: 'power3.out', stagger: .09, overwrite: true }); }
+    });
+    document.documentElement.classList.add('gsap-on');
+  })();
+</script>
 </body>
 </html>
