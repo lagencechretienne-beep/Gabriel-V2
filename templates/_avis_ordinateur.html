@@ -1,0 +1,39 @@
+{# Avis affiché uniquement sur petit écran : Gabriel est conçu pour ordinateur. Inclus dans la page d'accueil,
+   l'application et les pages héritées de base.html. Se ferme d'un clic et ne revient pas pendant la session. #}
+<div class="avis-ordinateur" id="avis-ordinateur" role="note" hidden>
+  <p><strong>Gabriel est conçu pour ordinateur.</strong> Sur téléphone, certains écrans sont réduits : pour une meilleure expérience, ouvrez-le sur un ordinateur.</p>
+  <button type="button" id="avis-ordinateur-ok">Compris</button>
+</div>
+<style>
+  .avis-ordinateur { display: none; }
+  @media (max-width: 820px) {
+    .avis-ordinateur:not([hidden]) {
+      display: flex; align-items: center; gap: 12px;
+      position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 2147483000;
+      padding: 12px 14px; border-radius: 12px;
+      background: #1b1b1b; color: #f4f4f4; border: 1px solid #b4a06e;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, .45);
+      font: 400 13px/1.45 "Inter Tight", "Helvetica Neue", Arial, sans-serif;
+    }
+    .avis-ordinateur p { margin: 0; flex: 1; }
+    .avis-ordinateur strong { font-weight: 600; }
+    .avis-ordinateur button {
+      flex: none; min-height: 36px; padding: 0 14px; border-radius: 8px; cursor: pointer;
+      border: 1px solid #b4a06e; background: transparent; color: #f4f4f4; font: inherit; font-weight: 600;
+    }
+    .avis-ordinateur button:focus-visible { outline: 2px solid #b4a06e; outline-offset: 2px; }
+  }
+</style>
+<script>
+  (function () {
+    var boite = document.getElementById('avis-ordinateur');
+    if (!boite) return;
+    var vu = false;
+    try { vu = window.sessionStorage.getItem('gabriel-avis-ordinateur') === '1'; } catch (e) {}
+    if (!vu) boite.hidden = false;
+    document.getElementById('avis-ordinateur-ok').addEventListener('click', function () {
+      boite.hidden = true;
+      try { window.sessionStorage.setItem('gabriel-avis-ordinateur', '1'); } catch (e) {}
+    });
+  })();
+</script>
