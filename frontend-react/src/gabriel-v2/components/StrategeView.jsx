@@ -38,10 +38,18 @@ const VOICE_ID_KEY = 'gabriel_voice_id';
 /* Le modèle renvoie parfois un objet ({ angle, titre, structure }) ou une liste d'objets là où l'écran
    attend du texte : « [object Object] » s'affichait dans Branding (constaté le 09/11/2026).
    Les textes simples et les listes de textes gardent exactement leur affichage d'avant. */
+/* Le modèle écrit parfois du Markdown (**gras**, *italique*) : l'écran affiche du texte brut,
+   les astérisques apparaissaient tels quels (« **audit IA locale express** »). On les retire. */
+function sansMarkdown(t) {
+  return String(t)
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/(^|[\s(«'"])\*(?=\S)([^*\n]+?)\*(?=$|[\s).,;:!?»'"])/g, '$1$2');
+}
+
 function esc(v) {
   if (v == null) return '';
-  if (typeof v !== 'object') return String(v);
-  if (Array.isArray(v)) return v.every(x => x == null || typeof x !== 'object') ? String(v) : v.map(esc).filter(Boolean).join(' · ');
+  if (typeof v !== 'object') return sansMarkdown(v);
+  if (Array.isArray(v)) return v.every(x => x == null || typeof x !== 'object') ? sansMarkdown(String(v)) : v.map(esc).filter(Boolean).join(' · ');
   return Object.entries(v).map(([cle, x]) => {
     const texte = esc(x);
     return texte ? `${cle.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase())} : ${texte}` : '';
