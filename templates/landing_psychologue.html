@@ -276,7 +276,9 @@
       .nav-toggle { display: inline-flex; }
     }
     @media (max-width: 1080px) {
-      .hero .wrap, .split .wrap, .limits .wrap { grid-template-columns: 1fr; }
+      /* minmax(0, 1fr) : un « 1fr » seul s'élargit au contenu le plus large et fait déborder la page sur mobile. */
+      .hero .wrap, .split .wrap, .limits .wrap { grid-template-columns: minmax(0, 1fr); }
+      .hero-copy, .hero .panel { min-width: 0; }
       .hero::before { inset: 0; width: auto; background-position: 60% 20%; opacity: .75; }
       .float { position: relative; left: auto; bottom: auto; width: auto; margin: -1px 0 0; box-shadow: none; }
       .band .wrap { grid-template-columns: 1fr 1fr 1fr; }
@@ -292,10 +294,27 @@
       .nav-account > a:not(.btn), .nav-account .btn { display: none; }
       .band .wrap, .ext .wrap { grid-template-columns: 1fr; }
       .step, .agent { border-right: 0; border-bottom: 1px solid var(--line); }
-      .cells { grid-template-columns: 1fr 1fr 1fr; } .cell { padding: 18px 14px; }
+      .cells { grid-template-columns: repeat(3, minmax(0, 1fr)); } .cell { padding: 18px 14px; min-width: 0; }
       .bar { grid-template-columns: 90px 1fr 48px; }
       .caps, .uses-grid { grid-template-columns: 1fr; }
       .portrait figcaption { left: 24px; right: 24px; bottom: 24px; }
+    }
+    /* Téléphone : texte lisible sans défilement latéral, boutons empilés, panneau compact. */
+    @media (max-width: 560px) {
+      html, body { overflow-x: clip; }
+      .hero .wrap { padding-top: 28px; }
+      .hero-copy h1 { overflow-wrap: anywhere; hyphens: auto; }
+      .hero-actions { flex-direction: column; align-items: stretch; gap: 14px; }
+      .hero-actions .btn { justify-content: center; text-align: center; }
+      .hero-actions .link { align-self: center; }
+      .trust { font-size: 14px; align-items: flex-start; }
+      .hero .panel { margin-left: 0; margin-right: 0; }
+      .panel-head, .panel-foot { padding-left: 16px; padding-right: 16px; }
+      .panel-head { flex-wrap: wrap; gap: 8px; }
+      .cell { padding: 14px 10px; }
+      .float { padding: 16px; }
+      .band-intro, .step, .agent { padding-left: 4px; padding-right: 4px; }
+      img, svg, video { max-width: 100%; }
     }
   </style>
 </head>

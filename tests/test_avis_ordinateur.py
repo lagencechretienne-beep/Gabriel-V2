@@ -34,3 +34,12 @@ def test_l_application_previent_les_utilisateurs_mobiles():
 def test_les_pages_heritees_de_base_aussi():
     html = _page('/tarifs')
     assert 'id="avis-ordinateur"' in html
+
+
+def test_le_hero_ne_deborde_plus_sur_petit_ecran():
+    """Constaté le 10/11/2026 à 375 px : « 1fr » seul laissait la colonne du Hero s'élargir au contenu
+    (423 px dans un écran de 375) — bouton et mention de confiance coupés à droite."""
+    html = _page('/')
+    assert 'grid-template-columns: minmax(0, 1fr);' in html
+    assert '@media (max-width: 560px)' in html
+    assert 'repeat(3, minmax(0, 1fr))' in html
