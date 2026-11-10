@@ -10,7 +10,12 @@ import app as application
 
 
 def _page(url):
-    r = application.app.test_client().get(url)
+    # Connecté : selon l'ordre des tests, l'authentification peut déjà être active (sinon sans effet).
+    client = application.app.test_client()
+    with client.session_transaction() as session:
+        session['user_id'] = 'test-avis-ordinateur'
+        session['user_email'] = 'avis@example.test'
+    r = client.get(url)
     assert r.status_code == 200, (url, r.status_code)
     return r.get_data(as_text=True)
 
