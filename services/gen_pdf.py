@@ -550,3 +550,193 @@ def _strat_elements(strat, st):
                                strat.get('indicateurs_succes') or strat.get('kpis')))
 
     return els
+
+
+# ────────────────────────────────────────────────────────
+# Rapport d'analyse — structure actuelle du Psychologue
+# ────────────────────────────────────────────────────────
+# L'ancienne version lisait des clés qui n'existent plus (psychologie_audience,
+# aspirations_profondes, synthese) et produisait un PDF presque vide. Celle-ci
+# lit le résultat tel que le backend l'écrit aujourd'hui : brief, dashboard,
+# emotions, recommandations, interpretation, personas.
+
+from xml.sax.saxutils import escape as _esc
+
+
+def _clean(text):
+    return _esc(str(text).replace('**', '').strip())
+
+
+def _flat(valeur, libelle=None):
+    """Aplati une valeur (texte, liste, objet) en lignes (libellé, texte), comme l'écran."""
+    if valeur is None or valeur == '':
+        return []
+    if isinstance(valeur, (str, int, float)):
+        t = str(valeur).strip()
+        return [(libelle, t)] if t else []
+    if isinstance(valeur, list):
+        out = []
+        for v in valeur:
+            out.extend(_flat(v, None))
+        return out
+    if isinstance(valeur, dict):
+        out = []
+        for cle, v in valeur.items():
+            nom = str(cle).replace('_', ' ').capitalize()
+            sous = _flat(v, nom)
+            if sous and sous[0][0] is None:
+                sous[0] = (nom, sous[0][1])
+            out.extend(sous)
+        return out
+    return []
+
+
+def _paras(valeur, st, puces=False):
+    out = []
+    for lib, txt in _flat(valeur):
+        corps = _clean(txt)
+        if lib:
+            corps = f'<b>{_clean(lib)}</b> — {corps}'
+        out.append(Paragraph(('• ' if puces else '') + corps, st['GBody']))
+    return out
+
+
+def _bloc(titre, valeur, st, puces=False):
+    p = _paras(valeur, st, puces)
+    if not p:
+        return []
+    return [Paragraph(_clean(titre).upper(), st['GLabel'])] + p + [Spacer(1, 3*mm)]
+
+
+def generate_analysis_pdf(entry, include_strategy=True):  # noqa: F811 — remplace l'ancienne version
+    """PDF d'analyse complet, lu depuis la structure actuelle. Retourne des bytes PDF."""
+    if not _HAS_REPORTLAB:
+        raise ImportError('reportlab non installé  →  pip install reportlab')
+    st = _styles()
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=15*mm, rightMargin=15*mm,
+                            topMargin=12*mm, bottomMargin=15*mm, title='Rapport Gabriel')
+    full = entry.get('full_result') or {}
+    meta = full.get('meta') or {}
+    db = full.get('dashboard') or {}
+    brief = full.get('brief') or {}
+    emo = full.get('emotions') or {}
+    recos = full.get('recommandations') or {}
+    interp = full.get('interpretation') or {}
+    personas = full.get('personas') or []
+    kpis = full.get('kpis') or entry.get('kpis') or {}
+    source = full.get('source_label') or entry.get('source') or entry.get('title') or ''
+    date_str = (entry.get('date') or entry.get('created_at') or '')[:16]
+    nb = meta.get('total_commentaires') or entry.get('nb_commentaires') or ''
+    title = entry.get('video_title') or full.get('video_context') or source or 'Analyse Gabriel'
+    story = [_header(str(title)[:110], f'{nb} commentaires collectés' if nb else 'Analyse de commentaires',
+                     source, date_str, st), Spacer(1, 6*mm)]
+
+    # Lecture d'ensemble
+    story += [_section_bar("Ce que dit cette audience", st), Spacer(1, 3*mm)]
+    kv = _kv_table([('Qui', ' '.join(t for _, t in _flat(brief.get('qui') or brief.get('synthese')))),
+                    ('Insight', ' '.join(t for _, t in _flat(brief.get('insight') or brief.get('insight_cle')))),
+                    ('Action', ' '.join(t for _, t in _flat(brief.get('action') or brief.get('action_prioritaire'))))], st)
+    if kv:
+        story += [kv, Spacer(1, 4*mm)]
+
+    # Chiffres clés
+    pos = db.get('positions') or {}
+    chiffres = {}
+    if nb:
+        chiffres['Collectés'] = nb
+    for cle, nom in (('favorable', 'Favorables'), ('oppose', 'Opposés'), ('neutre', 'Neutres')):
+        if (pos.get(cle) or {}).get('pct') is not None:
+            chiffres[nom] = f"{pos[cle]['pct']} %"
+    row = _kpi_row(chiffres, st)
+    if row:
+        story += [row, Spacer(1, 5*mm)]
+
+    # Émotions
+    dist = db.get('emotion_distribution') or {}
+    if isinstance(dist, list):
+        dist = {(d.get('emotion') or d.get('label') or '?'): d.get('pourcentage', d.get('pct', '')) for d in dist if isinstance(d, dict)}
+    if dist or emo.get('dominante'):
+        story += [_section_bar("Émotions détectées", st), Spacer(1, 3*mm)]
+        if emo.get('dominante'):
+            story.append(Paragraph(f"<b>Émotion dominante : {_clean(emo['dominante'])}</b>", st['GBodyBold']))
+        story += _paras(emo.get('intensite'), st)
+        lignes = [[Paragraph(_clean(str(k).capitalize()), st['GBody']), Paragraph(f'{v} %', st['GBodyBold'])]
+                  for k, v in sorted(dist.items(), key=lambda x: -float(x[1] or 0))[:8]]
+        if lignes:
+            t = Table(lignes, colWidths=[120*mm, 60*mm])
+            t.setStyle(TableStyle([('LINEBELOW', (0, 0), (-1, -1), .3, _GRIS_MID), ('TOPPADDING', (0, 0), (-1, -1), 2),
+                                   ('BOTTOMPADDING', (0, 0), (-1, -1), 2)]))
+            story += [t, Spacer(1, 3*mm)]
+        story += _bloc('Espoir déçu', emo.get('espoir_decu'), st)
+        story += _bloc('Aspiration nourrie', emo.get('aspiration_nourrie'), st)
+        story += _bloc('Besoins sous-jacents', emo.get('besoins_sous_jacents'), st)
+
+    # Synthèse stratégique
+    cles = [('Vérité de l\'audience', recos.get('verite_de_l_audience')), ('Message central', recos.get('message_central')),
+            ('Promesse authentique', recos.get('promesse_authentique')), ('Insight stratégique', recos.get('insight_strategique_cle')),
+            ('Ce qu\'ils ne disent pas, mais veulent entendre', recos.get('ce_qu_ils_ne_disent_pas_mais_veulent_entendre'))]
+    if any(v for _, v in cles) or recos.get('actions_prioritaires') or recos.get('prochaines_etapes'):
+        story += [_section_bar("Synthèse stratégique", st), Spacer(1, 3*mm)]
+        for titre, val in cles:
+            story += _bloc(titre, val, st)
+        acts = [t for _, t in _flat(recos.get('actions_prioritaires'))]
+        if acts:
+            story.append(Paragraph('ACTIONS PRIORITAIRES', st['GLabel']))
+            story += [Paragraph(f'{i}. {_clean(a)}', st['GBody']) for i, a in enumerate(acts, 1)] + [Spacer(1, 3*mm)]
+        story += _bloc('Feuille de route', recos.get('prochaines_etapes'), st, puces=True)
+
+    # Signaux mesurés
+    sf = db.get('signaux_frequents') or {}
+    blocs = []
+    for cle, nom in (('frustrations', 'Frustrations'), ('attentes', 'Attentes'), ('objections', 'Objections')):
+        items = sf.get(cle) or []
+        lignes = []
+        for it in items[:5]:
+            if isinstance(it, dict):
+                ex = (it.get('examples') or [''])[0]
+                lignes.append(f"{it.get('signal', '')} ({it.get('pct', '')} %)" + (f" — « {ex[:140]} »" if ex else ''))
+        if lignes:
+            blocs.append((nom, lignes))
+    if blocs:
+        story += [_section_bar("Signaux mesurés", st), Spacer(1, 3*mm)]
+        for nom, lignes in blocs:
+            story.append(Paragraph(nom.upper(), st['GLabel']))
+            story += [Paragraph('• ' + _clean(l), st['GBody']) for l in lignes] + [Spacer(1, 2*mm)]
+
+    # Psychologie
+    ps = interp.get('psychologique') or {}
+    if ps.get('main_insight') or interp.get('lecture_sujet') or interp.get('tension_centrale'):
+        story += [_section_bar("Lecture psychologique", st), Spacer(1, 3*mm)]
+        story += _bloc('Insight principal', ps.get('main_insight'), st)
+        story += _bloc('Lecture du sujet', interp.get('lecture_sujet'), st)
+        story += _bloc('Tension centrale', interp.get('tension_centrale'), st)
+        story += _bloc('Ce qui rassemble', interp.get('ce_qui_rassemble'), st)
+        story += _bloc('Ce qui divise', interp.get('ce_qui_divise'), st)
+        for cle, nom in (('peurs', 'Peurs'), ('desirs', 'Désirs'), ('frustrations', 'Frustrations'), ('objections', 'Objections')):
+            story += _bloc(nom, interp.get(cle), st, puces=True)
+
+    # Personas
+    if personas:
+        story += [_section_bar(f"Personas ({len(personas)})", st), Spacer(1, 3*mm)]
+        for p in personas[:8]:
+            if not isinstance(p, dict):
+                continue
+            tete = ' · '.join(_clean(x) for x in (p.get('nom'), p.get('age'), p.get('genre'), p.get('métier') or p.get('metier')) if x)
+            bloc = [Paragraph(f'<b>{tete}</b>', st['GBodyBold'])]
+            for cle, nom in (('situation_vie', 'Situation'), ('état_esprit', 'État d\'esprit'), ('vision_monde', 'Vision du monde'),
+                             ('langage_typique', 'Langage typique')):
+                bloc += _paras({nom: p.get(cle)}, st) if p.get(cle) else []
+            story.append(KeepTogether(bloc + [Spacer(1, 3*mm)]))
+
+    # Stratégie
+    strat = [('Positionnement', recos.get('positionnement')), ('Différenciation', recos.get('differenciation')),
+             ('Récits à porter', recos.get('angles_narratifs')), ('Risques à contrôler', recos.get('risques_strategiques'))]
+    if include_strategy and any(v for _, v in strat):
+        story += [_section_bar("Stratégie", st), Spacer(1, 3*mm)]
+        for titre, val in strat:
+            story += _bloc(titre, val, st, puces=isinstance(val, list))
+
+    story += [Spacer(1, 6*mm), HRFlowable(width='100%', thickness=.4, color=_GRIS_MID), Spacer(1, 2*mm), _footer(st)]
+    doc.build(story)
+    return buf.getvalue()

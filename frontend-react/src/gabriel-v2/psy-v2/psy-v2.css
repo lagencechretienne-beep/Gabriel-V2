@@ -1,0 +1,158 @@
+/* Psychologue v2 — scène d'entrée. Tokens = noms réels de gabriel-v2-styles.css (:root). */
+.mo-root {
+  --ink: #1d1d1f; --body: #515154; --muted: #86868b; --line: #e5e5e7;
+  --canvas: #f5f5f7; --surface: #ffffff; --soft: #fbfbfc;
+  --core-champagne: #b08a52; --psychologist-sage: #718078;
+  --font-family-display: "Space Grotesk", "Helvetica Neue", sans-serif;
+  --font-family-sans: "Inter Tight", "Helvetica Neue", sans-serif;
+  --gv2-psy2-shadow: 0 1px 2px rgb(0 0 0 / .04), 0 18px 48px -24px rgb(0 0 0 / .18);
+}
+
+/* Titre : mots qui se révèlent */
+.gv2-psy2-title span { display: inline-block; animation: gv2-psy2-word .7s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i) * 90ms); }
+@keyframes gv2-psy2-word { from { opacity: 0; filter: blur(6px); transform: translateY(8px); } to { opacity: 1; filter: none; transform: none; } }
+.mo-greet em { font-style: normal; color: var(--ink); background: linear-gradient(transparent 62%, color-mix(in oklab, var(--psychologist-sage) 22%, transparent) 62%); }
+
+.gv2-psy2-recents { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; margin-top: 20px; }
+.gv2-psy2-label { font-family: var(--font-mono, monospace); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.gv2-psy2-recents button {
+  max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  border: 1px solid var(--line); background: var(--surface); color: var(--body); border-radius: 999px;
+  padding: 6px 14px; font: inherit; font-size: 14px; cursor: pointer; transition: border-color .2s, color .2s, transform .2s;
+}
+.gv2-psy2-recents button:hover { color: var(--ink); border-color: color-mix(in oklab, var(--psychologist-sage) 50%, var(--line)); transform: translateY(-1px); }
+
+/* Contenu de la barre (dans .mo-input, fond encre) */
+.mo-input { padding: 0 8px 0 8px; gap: 6px; }
+.gv2-psy2-picker { position: relative; flex: none; }
+.gv2-psy2-chip {
+  display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 12px; border: 0; border-radius: 999px;
+  background: rgb(255 255 255 / .08); color: #fbfbfc; font: inherit; font-size: 14px; cursor: pointer; transition: background .2s;
+}
+.gv2-psy2-chip:hover { background: rgb(255 255 255 / .14); }
+.gv2-psy2-chip svg.is-open { transform: rotate(180deg); }
+.gv2-psy2-chip svg { transition: transform .2s; opacity: .7; }
+.gv2-psy2-mark { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: rgb(255 255 255 / .12); font-size: 11px; }
+.gv2-psy2-cross.is-active { background: color-mix(in oklab, var(--psychologist-sage) 55%, transparent); }
+.gv2-psy2-field {
+  flex: 1; min-width: 0; height: 44px; padding: 0 8px; background: transparent; border: 0; outline: 0;
+  color: #fbfbfc; font: inherit; font-size: 16px;
+}
+.gv2-psy2-field::placeholder { color: rgb(251 251 252 / .5); }
+.gv2-psy2-field:disabled { opacity: .5; }
+.gv2-psy2-textarea { resize: none; padding-top: 11px; line-height: 22px; overflow: hidden; }
+.gv2-psy2-file { display: flex; align-items: center; gap: 8px; cursor: pointer; color: rgb(251 251 252 / .75); font-size: 15px; }
+.gv2-psy2-file span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gv2-psy2-recognized { flex: none; display: inline-flex; align-items: center; gap: 4px; font-size: 14px; color: #c9d3cd; }
+.gv2-psy2-recognized.is-duplicate { color: rgb(251 251 252 / .6); }
+.mo-send:disabled { cursor: default; }
+.gv2-psy2-spin { animation: gv2-psy2-spin 1s linear infinite; }
+@keyframes gv2-psy2-spin { to { transform: rotate(360deg); } }
+
+.gv2-psy2-menu {
+  position: absolute; left: 0; bottom: calc(100% + 14px); min-width: 220px; padding: 6px; z-index: 5;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--gv2-psy2-shadow);
+  animation: gv2-psy2-pop .2s cubic-bezier(.2,.8,.2,1) both;
+}
+.gv2-psy2-menu button {
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border: 0; border-radius: 10px;
+  background: none; color: inherit; font: inherit; font-size: 15px; text-align: left; cursor: pointer;
+}
+.gv2-psy2-menu button:hover, .gv2-psy2-menu button[aria-selected="true"] { background: var(--canvas); }
+.gv2-psy2-menu button svg { margin-left: auto; color: var(--psychologist-sage); }
+.gv2-psy2-menu .gv2-psy2-mark { background: var(--canvas); color: var(--body); }
+.gv2-psy2-menu hr { border: 0; border-top: 1px solid var(--line); margin: 6px 4px; }
+@keyframes gv2-psy2-pop { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
+
+/* Zones autour de la barre */
+.gv2-psy2-above, .gv2-psy2-below, .gv2-psy2-thinking, .gv2-psy2-after {
+  position: absolute; left: 50%; transform: translate(-50%, 8px); width: min(560px, calc(100vw - 32px));
+  opacity: 0; pointer-events: none; transition: opacity .35s ease, transform .45s cubic-bezier(.2,.8,.2,1);
+}
+[data-show].gv2-psy2-above, [data-show].gv2-psy2-below, [data-show].gv2-psy2-thinking, [data-show].gv2-psy2-after { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.gv2-psy2-above { bottom: 140px; display: flex; flex-direction: column; gap: 10px; }
+.gv2-psy2-below { bottom: 22px; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 16px; font-size: 14px; color: var(--body); text-align: center; }
+.gv2-psy2-status.is-success { color: var(--psychologist-sage); }
+.gv2-psy2-status.is-error { color: #b4513b; }
+.gv2-psy2-count { font-variant-numeric: tabular-nums; color: var(--muted); }
+.gv2-psy2-count[data-ok] { color: var(--psychologist-sage); }
+.gv2-psy2-link { background: none; border: 0; padding: 0; font: inherit; font-size: 14px; color: var(--ink); cursor: pointer; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 4px; }
+.gv2-psy2-link:hover { text-decoration-color: var(--ink); }
+
+.gv2-psy2-preview {
+  display: flex; align-items: center; gap: 14px; padding: 10px; padding-right: 16px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--gv2-psy2-shadow);
+  animation: gv2-psy2-pop .35s cubic-bezier(.2,.8,.2,1) both;
+}
+.gv2-psy2-preview img, .gv2-psy2-preview-fallback { flex: none; width: 88px; height: 50px; border-radius: 10px; object-fit: cover; background: var(--canvas); }
+.gv2-psy2-preview-fallback { display: grid; place-items: center; font-size: 13px; color: var(--muted); }
+.gv2-psy2-preview-text { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.gv2-psy2-preview-text strong { font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gv2-psy2-preview-text span { font-size: 14px; color: var(--body); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gv2-psy2-ok { flex: none; display: inline-flex; align-items: center; gap: 4px; font-size: 14px; color: var(--psychologist-sage); }
+
+.gv2-psy2-queue { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.gv2-psy2-qchip {
+  display: inline-flex; align-items: center; gap: 4px; max-width: 100%; height: 36px; padding: 0 4px 0 6px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 999px; font-size: 14px;
+  animation: gv2-psy2-pop .3s cubic-bezier(.2,.8,.2,1) both;
+}
+.gv2-psy2-qnum { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--psychologist-sage); color: #fff; font-size: 12px; font-weight: 600; }
+.gv2-psy2-qtitle { max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 4px; }
+.gv2-psy2-qchip button { display: grid; place-items: center; width: 26px; height: 26px; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; }
+.gv2-psy2-qchip button:hover:not(:disabled) { background: var(--canvas); color: var(--ink); }
+.gv2-psy2-qchip button:disabled { opacity: .3; cursor: default; }
+.gv2-psy2-crossready { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; color: var(--body); }
+.gv2-psy2-cta {
+  height: 36px; padding: 0 16px; border: 0; border-radius: 999px; cursor: pointer; font: inherit; font-size: 14px; font-weight: 500;
+  background: var(--core-champagne); color: #fff; box-shadow: 0 8px 24px -10px var(--core-champagne); transition: transform .2s;
+}
+.gv2-psy2-cta:hover { transform: translateY(-1px); }
+
+.gv2-psy2-intents { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px; mask-image: linear-gradient(90deg, #000 85%, transparent); }
+.gv2-psy2-intents::-webkit-scrollbar { display: none; }
+.gv2-psy2-intent {
+  flex: none; height: 36px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: color-mix(in oklab, var(--surface) 80%, transparent);
+  backdrop-filter: blur(8px); color: var(--body); font: inherit; font-size: 14px; cursor: pointer; transition: color .2s, border-color .2s, transform .2s;
+}
+.gv2-psy2-intent:hover { color: var(--ink); border-color: color-mix(in oklab, var(--psychologist-sage) 50%, var(--line)); transform: translateY(-1px); }
+
+.gv2-psy2-column { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--body); }
+.gv2-psy2-column select { height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font: inherit; font-size: 14px; }
+
+/* Pendant la réflexion */
+.gv2-psy2-thinking { top: calc(46% + 160px); display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.gv2-psy2-stages { display: flex; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.gv2-psy2-stages li { padding: 5px 12px; border-radius: 999px; font-size: 14px; color: var(--muted); border: 1px solid transparent; transition: all .3s; }
+.gv2-psy2-stages li.is-complete { color: var(--psychologist-sage); }
+.gv2-psy2-stages li.is-complete::before { content: "✓ "; }
+.gv2-psy2-stages li.is-active { color: var(--ink); background: var(--surface); border-color: var(--line); box-shadow: var(--gv2-psy2-shadow); }
+.gv2-psy2-lsources { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.gv2-psy2-lsources span { display: inline-flex; align-items: center; gap: 6px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 4px 12px 4px 4px; border-radius: 999px; background: color-mix(in oklab, var(--surface) 70%, transparent); border: 1px solid var(--line); font-size: 14px; color: var(--body); }
+.gv2-psy2-lsources b { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--psychologist-sage); color: #fff; font-size: 12px; }
+
+/* Après la lecture */
+.gv2-psy2-after { top: calc(46% + 180px); display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.gv2-psy2-after button { height: 40px; padding: 0 16px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font: inherit; font-size: 14px; color: var(--ink); cursor: pointer; }
+.gv2-psy2-after button span { color: var(--muted); margin-left: 6px; }
+.gv2-psy2-after button:hover { border-color: var(--ink); }
+
+@media (max-width: 640px) {
+  .gv2-psy2-chip-label { display: none; }
+  .gv2-psy2-chip { padding: 0 10px; }
+  .gv2-psy2-chip svg:last-child:not(:first-child) { display: none; }
+  .gv2-psy2-qtitle { max-width: 120px; }
+  .gv2-psy2-preview img, .gv2-psy2-preview-fallback { width: 64px; height: 40px; }
+  .gv2-psy2-intents { margin: 0 -16px; padding: 2px 16px; }
+  .gv2-psy2-below { gap: 4px 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gv2-psy2-title span, .gv2-psy2-menu, .gv2-psy2-preview, .gv2-psy2-qchip, .gv2-psy2-spin { animation: none !important; }
+}
+/* Ligne sous la barre : toujours une seule ligne, jamais sur la barre */
+.gv2-psy2-below { bottom: 18px; flex-wrap: nowrap; white-space: nowrap; }
+.gv2-psy2-status { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.gv2-psy2-below > * { flex: none; }
+.gv2-psy2-below > .gv2-psy2-status { flex: 0 1 auto; }
+.gv2-psy2-lsources b { flex: none; }
+@media (max-width: 640px) { .gv2-psy2-below .gv2-psy2-link { display: none; } }

@@ -930,16 +930,20 @@ export function StrategeView({ workspace, onWorkspaceChange, onNavigateAgent, on
   }
 
   if (stage === 'need_analysis') {
-    return <div className="gv2-strat-empty">
+    return <div className="gv2-strat-empty is-calm">
+      <span className="gv2-strat-empty-eyebrow">Ariane · Stratégie</span>
       <h2>Une analyse est disponible pour ce dossier</h2>
       <p>Gabriel peut générer une stratégie à partir de l'analyse d'audience déjà réalisée et de votre profil business.</p>
-      <button type="button" onClick={generer}>Générer la stratégie</button>
-      <button type="button" className="gv2-strat-secondary" onClick={() => setStage('interview')}>Ou décrivez-moi votre activité maintenant</button>
+      <div className="gv2-strat-empty-actions">
+        <button type="button" className="gv2-strat-primary" onClick={generer}>Générer la stratégie</button>
+        <button type="button" className="gv2-strat-secondary" onClick={() => setStage('interview')}>Ou décrivez-moi votre activité maintenant →</button>
+      </div>
     </div>;
   }
 
   if (stage === 'need_profile') {
-    return <div className="gv2-strat-empty">
+    return <div className="gv2-strat-empty is-calm">
+      <span className="gv2-strat-empty-eyebrow">Ariane · Stratégie</span>
       <h2>Votre profil business est incomplet</h2>
       <p>Gabriel a besoin de ces informations pour générer une stratégie fiable :</p>
       <ul className="gv2-strat-missing">{(missingFields || []).map(f => <li key={f.field}>{f.label}</li>)}</ul>

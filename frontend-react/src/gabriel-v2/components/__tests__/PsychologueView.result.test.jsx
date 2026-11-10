@@ -470,7 +470,7 @@ describe('Stratégie du Psychologue : champs rendus sous forme d’objet', () =>
     expect(screen.getByText(/Nous cartographions les possibles/)).toBeInTheDocument();
     expect(screen.getByText(/Une communauté qui rassure/)).toBeInTheDocument();
     expect(screen.getByText(/Technique et poétique/)).toBeInTheDocument();
-    expect(screen.getByText(/Declaration —/)).toBeInTheDocument();
+    expect(screen.getByText(/^Declaration$/)).toBeInTheDocument();
   });
 
   it('affiche aussi le message central et la promesse quand ils arrivent en objet (onglet Synthèse)', async () => {

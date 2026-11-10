@@ -4929,3 +4929,191 @@ html[data-gabriel-v2-theme="dark"] .gv2-creator-message--error span { background
   .gv2-cdoc-head h2 { font-size: 22px; }
   input:not([type]), input[type="text"], input[type="url"], input[type="search"] { min-height: 44px; }
 }
+
+/* ═══ Psychologue — version aérée ═════════════════════════════════════════
+   Même contenu et mêmes fonctions : on double les espaces, on agrandit la
+   lecture (14 px minimum) et on retire une couche de cadres. Inspiré de
+   l'aperçu de rapport de la page d'accueil. */
+.gv2-psy-view .gv2-psy-result { max-width: 1040px; padding: 8px 4px 72px; }
+.gv2-psy-view .gv2-psy-result-head { margin-bottom: 40px; gap: 24px; }
+.gv2-psy-view .gv2-psy-result-head h1 { margin: 8px 0 10px; font: 500 clamp(30px, 3.4vw, 44px)/1.1 var(--font-display, 'Space Grotesk', sans-serif); letter-spacing: -.02em; }
+.gv2-psy-view .gv2-psy-source { font-size: 14px; line-height: 1.6; }
+.gv2-psy-view .gv2-psy-result-actions { gap: 10px; }
+.gv2-psy-view .gv2-psy-ghost-btn, .gv2-psy-view .gv2-psy-primary-btn { min-height: 42px; padding: 0 20px; font-size: 14px; border-radius: 999px; }
+
+/* Phrase-héros : un grand énoncé éditorial, plus une boîte teintée */
+.gv2-psy-view .gv2-psy-hero { margin-bottom: 48px; padding: 8px 0 8px 28px; border: 0; border-left: 2px solid var(--core-champagne, #b08a52); border-radius: 0; background: transparent; }
+.gv2-psy-view .gv2-psy-hero-label { margin-bottom: 14px; font-size: 12px; letter-spacing: .16em; }
+.gv2-psy-view .gv2-psy-hero-text { max-width: 30ch; font: 500 clamp(24px, 2.6vw, 34px)/1.3 var(--font-display, 'Space Grotesk', sans-serif); letter-spacing: -.015em; }
+.gv2-psy-view .gv2-psy-hero-pills { gap: 14px 28px; margin-top: 24px; font-size: 15px; line-height: 1.6; }
+
+/* Chiffres clés : une seule bande à filets, sans quatre cases */
+.gv2-psy-view .gv2-psy-stats-grid { gap: 0; margin-bottom: 56px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.gv2-psy-view .gv2-psy-stat-chip { padding: 28px 24px; border: 0; border-right: 1px solid var(--line); border-radius: 0; background: transparent; text-align: left; }
+.gv2-psy-view .gv2-psy-stat-chip:last-child { border-right: 0; }
+.gv2-psy-view .gv2-psy-stat-chip .gv2-psy-stat-val, .gv2-psy-view .gv2-psy-stat-chip strong { font-size: clamp(28px, 3vw, 40px); }
+
+/* Onglets et sections */
+.gv2-psy-view .gv2-psy-result-tabs { margin: 8px 0 48px; padding: 5px; border-radius: 999px; }
+.gv2-psy-view .gv2-psy-result-tabs button { min-height: 42px; padding: 0 22px; font-size: 14px; border-radius: 999px; }
+.gv2-psy-view .gv2-psy-section { margin-bottom: 64px; }
+.gv2-psy-view .gv2-psy-section-title { margin-bottom: 18px; font-size: 12px; letter-spacing: .16em; }
+.gv2-psy-view .gv2-psy-section-hint { margin: -6px 0 22px; font-size: 14px; line-height: 1.6; }
+
+/* Cartes : plus larges à l'intérieur, une seule couche de cadre */
+.gv2-psy-view .gv2-psy-card { border-radius: 20px; }
+.gv2-psy-view .gv2-psy-card--plain { padding: 36px 40px; }
+.gv2-psy-view .gv2-psy-card-body { padding: 28px; }
+.gv2-psy-view .gv2-psy-card-footer { padding: 18px 28px; }
+.gv2-psy-view .gv2-psy-statement { padding: 22px 0; }
+.gv2-psy-view .gv2-psy-statement p { font-size: 16px; line-height: 1.75; max-width: 68ch; }
+.gv2-psy-view .gv2-psy-statement-label { margin-bottom: 8px; font-size: 12px; letter-spacing: .14em; }
+.gv2-psy-view .gv2-psy-reco-message blockquote { font: 500 clamp(20px, 2vw, 26px)/1.4 var(--font-display, 'Space Grotesk', sans-serif); }
+.gv2-psy-view .gv2-psy-emo-head { gap: 16px; margin-bottom: 20px; }
+.gv2-psy-view .gv2-psy-emo-dominante { padding: 7px 16px; font-size: 14px; }
+
+/* Barres, actions, feuille de route */
+.gv2-psy-view .gv2-psy-bar-row { gap: 18px; padding: 12px 0; }
+.gv2-psy-view .gv2-psy-bar-label { width: 150px; font-size: 14px; }
+.gv2-psy-view .gv2-psy-bar-track { height: 6px; border-radius: 3px; }
+.gv2-psy-view .gv2-psy-bar-pct { width: 52px; font-size: 14px; }
+.gv2-psy-view .gv2-psy-bar-count { font-size: 12px; }
+.gv2-psy-view .gv2-psy-actions-list { gap: 22px; }
+.gv2-psy-view .gv2-psy-actions-list li { gap: 18px; font-size: 16px; line-height: 1.7; }
+.gv2-psy-view .gv2-psy-actions-num { width: 30px; height: 30px; font-size: 13px; }
+.gv2-psy-view .gv2-psy-timeline { gap: 20px; }
+.gv2-psy-view .gv2-psy-timeline-step { padding: 26px 24px; border-radius: 6px 6px 18px 18px; font-size: 15px; line-height: 1.65; }
+.gv2-psy-view .gv2-psy-timeline-when { margin-bottom: 10px; font-size: 12px; letter-spacing: .12em; }
+
+/* KPI, traits, personas, bloc de fin */
+.gv2-psy-view .gv2-psy-kpis { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+.gv2-psy-view .gv2-psy-traits { gap: 8px; }
+.gv2-psy-view .gv2-psy-traits li { padding: 6px 14px; font-size: 14px; }
+.gv2-psy-view .gv2-psy-persona-card { padding: 32px 34px; border-radius: 20px; }
+.gv2-psy-view .gv2-psy-persona-card p, .gv2-psy-view .gv2-psy-persona-card li { font-size: 15px; line-height: 1.7; }
+.gv2-psy-view .gv2-psy-next { margin-top: 56px; padding: 32px 36px; border-radius: 22px; }
+.gv2-psy-view .gv2-psy-next-hint { font-size: 14px; }
+@media (max-width: 720px) {
+  .gv2-psy-view .gv2-psy-card--plain { padding: 24px 22px; }
+  .gv2-psy-view .gv2-psy-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gv2-psy-view .gv2-psy-stat-chip:nth-child(2) { border-right: 0; }
+  .gv2-psy-view .gv2-psy-stat-chip:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+  .gv2-psy-view .gv2-psy-bar-label { width: 110px; }
+  .gv2-psy-view .gv2-psy-section { margin-bottom: 48px; }
+}
+
+/* ── Lecture des textes du rapport : étiquette + texte, message central en paliers, écoute ── */
+.gv2-psy-view .gv2-psy-statement-body { display: grid; gap: 22px; }
+.gv2-psy-view .gv2-psy-statement-row { display: grid; grid-template-columns: minmax(120px, 190px) minmax(0, 1fr); gap: 8px 32px; align-items: baseline; }
+.gv2-psy-view .gv2-psy-statement-key { color: var(--muted); font: 500 12px/1.5 var(--font-mono, 'JetBrains Mono', monospace); letter-spacing: .12em; text-transform: uppercase; }
+.gv2-psy-view .gv2-psy-statement-row p, .gv2-psy-view .gv2-psy-statement-body > p { margin: 0; max-width: 62ch; }
+.gv2-psy-view .gv2-psy-central { padding: 8px 0 0; }
+.gv2-psy-view .gv2-psy-central-main { margin: 14px 0 0; padding: 4px 0 4px 28px; border-left: 2px solid var(--core-champagne, #b08a52); font: 500 clamp(22px, 2.4vw, 32px)/1.35 var(--font-display, 'Space Grotesk', sans-serif); letter-spacing: -.015em; color: var(--ink); max-width: 34ch; }
+.gv2-psy-view .gv2-psy-central-beats { display: grid; gap: 22px; margin: 32px 0 0 30px; }
+.gv2-psy-view .gv2-psy-central-beat { display: grid; grid-template-columns: minmax(120px, 190px) minmax(0, 1fr); gap: 8px 32px; align-items: baseline; }
+.gv2-psy-view .gv2-psy-central-beat p { margin: 0; max-width: 60ch; font-size: 16px; line-height: 1.75; color: var(--body); }
+.gv2-psy-view .gv2-psy-listen-row { display: flex; justify-content: flex-end; margin: -8px 0 28px; }
+.gv2-psy-listen { display: inline-flex; align-items: center; gap: 10px; min-height: 42px; padding: 0 20px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface, #fff); color: var(--ink); font: 500 14px/1 var(--font-text, 'Inter Tight', sans-serif); cursor: pointer; transition: border-color .2s ease, transform .2s ease; }
+.gv2-psy-listen:hover { border-color: var(--ink); transform: translateY(-1px); }
+.gv2-psy-listen.is-active { cursor: default; padding: 0 10px; gap: 6px; }
+.gv2-psy-listen.is-active:hover { transform: none; border-color: var(--line); }
+.gv2-psy-listen-btn { display: inline-grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 50%; background: var(--ink); color: var(--surface, #fff); cursor: pointer; }
+.gv2-psy-listen-wait { padding: 0 10px; color: var(--muted); font-size: 14px; }
+.gv2-psy-listen-bars { display: inline-flex; align-items: center; gap: 3px; height: 18px; padding: 0 8px; }
+.gv2-psy-listen-bars i { display: block; width: 3px; height: 14px; border-radius: 2px; background: var(--psychologist-sage, #718078); animation: gv2-psy-eq 1s ease-in-out infinite; }
+.gv2-psy-listen-bars i:nth-child(2) { animation-delay: .15s; } .gv2-psy-listen-bars i:nth-child(3) { animation-delay: .3s; } .gv2-psy-listen-bars i:nth-child(4) { animation-delay: .45s; }
+.gv2-psy-listen-bars[data-paused] i { animation-play-state: paused; opacity: .4; }
+@keyframes gv2-psy-eq { 0%, 100% { transform: scaleY(.3); } 50% { transform: scaleY(1); } }
+@media (prefers-reduced-motion: reduce) { .gv2-psy-listen-bars i { animation: none; } }
+@media (max-width: 720px) {
+  .gv2-psy-view .gv2-psy-statement-row, .gv2-psy-view .gv2-psy-central-beat { grid-template-columns: 1fr; gap: 6px; }
+  .gv2-psy-view .gv2-psy-central-beats { margin-left: 0; }
+  .gv2-psy-view .gv2-psy-central-main { padding-left: 18px; }
+}
+
+/* ═══ Scène Psychologue (barre + orbe) : clair ET sombre, traités ensemble ═══
+   Zone de travail (menus visibles), barre au milieu, sans encadré : elle se fond dans la page.
+   Clair : blanc pur, aucune image. Sombre : la photo habituelle sous un voile. */
+.gv2-psy-view:has(.mo-root) { position: relative; min-height: 640px; overflow: hidden; }
+.gv2-psy-view .mo-root {
+  position: absolute; inset: 0; min-height: 640px;
+  --paper: #ffffff; --ink: #1d1d1f; --body: #515154; --muted: #86868b; --line: #e5e5e7; --surface: #ffffff; --soft: #f5f5f7;
+  --bar-bg: #f3f3f5; --bar-fg: #1d1d1f; --bar-dim: #8a8a90; --bar-chip: rgba(29,29,31,.06); --bar-chip-hover: rgba(29,29,31,.11);
+  --send-bg: #1d1d1f; --send-fg: #ffffff;
+  background: #ffffff; color: #1d1d1f;
+}
+.gv2-theme-dark .gv2-psy-view .mo-root {
+  --paper: #0f1011; --ink: #ffffff; --body: #e4e4e4; --muted: #a3a6aa; --line: rgba(255,255,255,.16); --surface: #121314; --soft: #1d1e20;
+  --bar-bg: rgba(255,255,255,.08); --bar-fg: #ffffff; --bar-dim: rgba(255,255,255,.55); --bar-chip: rgba(255,255,255,.09); --bar-chip-hover: rgba(255,255,255,.16);
+  --send-bg: #ffffff; --send-fg: #111214;
+  color: #ffffff;
+  background:
+    linear-gradient(180deg, rgba(9,10,11,.5) 0%, rgba(9,10,11,.6) 55%, #0f1011 100%),
+    var(--psy-stage-image) 50% 22% / cover no-repeat,
+    #0f1011;
+}
+.gv2-psy-view .mo-bg { display: none; }
+.gv2-psy-view .mo-greet { top: 27%; }
+.gv2-psy-view .mo-greet p, .gv2-psy-view .mo-hint { color: var(--body); }
+/* La barre : un aplat doux, sans cadre, sans halo coloré */
+.gv2-psy-view .mo-surface { background: var(--bar-bg); box-shadow: none; -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
+.gv2-psy-view .mo-aurora, .gv2-psy-view .mo-underglow, .gv2-psy-view .mo-ring { display: none; }
+.gv2-psy-view .mo-input, .gv2-psy-view .mo-field, .gv2-psy-view .gv2-psy2-field { color: var(--bar-fg); }
+.gv2-psy-view .mo-field::placeholder, .gv2-psy-view .gv2-psy2-field::placeholder { color: var(--bar-dim); }
+.gv2-psy-view .gv2-psy2-chip { background: var(--bar-chip); color: var(--bar-fg); transition: background .2s ease, transform .2s ease; }
+.gv2-psy-view .gv2-psy2-chip:hover { background: var(--bar-chip-hover); }
+.gv2-psy-view .gv2-psy2-mark { background: var(--bar-chip-hover); color: var(--bar-fg); }
+.gv2-psy-view .gv2-psy2-file, .gv2-psy-view .gv2-psy2-recognized { color: var(--bar-fg); }
+.gv2-psy-view .mo-spark { color: var(--bar-dim); }
+/* Le bouton d'envoi : rond, plein, lisible dans les deux thèmes */
+.gv2-psy-view .mo-send { width: 44px; height: 44px; background: var(--send-bg); color: var(--send-fg); opacity: .32; box-shadow: 0 6px 16px -8px rgba(0,0,0,.45); transition: opacity .25s ease, transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s ease; }
+.gv2-psy-view .mo-send[data-ready] { opacity: 1; }
+.gv2-psy-view .mo-send[data-ready]:hover { transform: translateY(-1px) scale(1.04); box-shadow: 0 10px 22px -10px rgba(0,0,0,.55); }
+.gv2-psy-view .mo-send:active { transform: scale(.96); }
+.gv2-psy-view .gv2-psy2-above { bottom: calc(40% + 46px); }
+.gv2-psy-view .gv2-psy2-below { bottom: auto; top: calc(60% + 52px); }
+.gv2-psy-view .gv2-psy2-thinking { top: calc(60% + 90px); }
+.gv2-psy-view .gv2-psy2-after { top: calc(60% + 110px); }
+/* La carte de résultat reste claire dans les deux thèmes */
+.gv2-psy-view .mo-card, .gv2-psy-view .mo-answer { --ink: #1d1d1f; --body: #515154; --muted: #86868b; --line: #e5e5e7; color: #1d1d1f; }
+@media (max-width: 720px) {
+  .gv2-psy-view .mo-greet { top: 22%; }
+  .gv2-psy-view .gv2-psy2-below { white-space: normal; }
+}
+
+/* ── Ariane : états d'attente (analyse disponible, profil incomplet) — épurés, sans grande boîte vide ── */
+.gv2-strat-empty.is-calm { max-width: 560px; margin: clamp(48px, 14vh, 150px) auto 0; padding: 0 24px; border: 0; background: transparent !important; text-align: center; }
+.gv2-strat-empty-eyebrow { display: block; margin-bottom: 20px; color: var(--muted); font: 500 12px/1 var(--font-family-mono, 'JetBrains Mono', monospace); letter-spacing: .16em; text-transform: uppercase; }
+.gv2-strat-empty.is-calm h2 { margin: 0 0 16px; font: 500 clamp(28px, 3.2vw, 38px)/1.15 var(--font-family-display); letter-spacing: -.02em; }
+.gv2-strat-empty.is-calm p { max-width: 44ch; margin: 0 auto 36px; font-size: 16px; line-height: 1.7; }
+.gv2-strat-empty-actions { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.gv2-strat-empty.is-calm .gv2-strat-primary, .gv2-strat-empty.is-calm .gv2-strat-missing + a {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 50px; padding: 0 30px; border: 0; border-radius: 999px;
+  background: var(--ink); color: var(--surface); font: 500 15px/1 var(--font-family-sans); letter-spacing: .005em; cursor: pointer; text-decoration: none;
+  box-shadow: 0 12px 28px -14px rgba(0,0,0,.5); transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s ease, opacity .2s ease;
+}
+.gv2-strat-empty.is-calm .gv2-strat-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 34px -16px rgba(0,0,0,.55); }
+.gv2-strat-empty.is-calm .gv2-strat-primary:active { transform: scale(.98); }
+.gv2-strat-empty.is-calm .gv2-strat-secondary { margin: 0; padding: 4px 2px; border: 0; background: transparent !important; color: var(--muted) !important; font-size: 15px !important; font-weight: 500 !important; text-decoration: none; cursor: pointer; transition: color .2s ease; }
+.gv2-strat-empty.is-calm .gv2-strat-secondary:hover { color: var(--ink) !important; }
+.gv2-strat-empty.is-calm .gv2-strat-missing { max-width: 360px; margin: 0 auto 28px; gap: 8px; }
+.gv2-strat-empty.is-calm .gv2-strat-missing li { padding: 10px 16px; border-radius: 999px; font-size: 14px; }
+.gv2-theme-dark .gv2-strat-empty.is-calm { background: transparent !important; border: 0; }
+
+/* ── Résultat qui se complète : bandeau discret + arrivée douce des blocs ── */
+.gv2-psy-view .gv2-psy-partial { display: flex; align-items: center; gap: 16px; margin: 0 0 36px; padding: 18px 22px; border: 1px solid var(--line); border-radius: 18px; background: var(--soft, #f5f5f7); color: var(--body); font-size: 15px; line-height: 1.6; }
+.gv2-psy-view .gv2-psy-partial strong { color: var(--ink); font-weight: 600; }
+.gv2-psy-view .gv2-psy-partial-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--psychologist-sage, #718078); animation: gv2-psy-partial-pulse 1.6s ease-in-out infinite; }
+@keyframes gv2-psy-partial-pulse { 0%, 100% { transform: scale(.8); opacity: .5; } 50% { transform: scale(1.15); opacity: 1; } }
+.gv2-psy-view .gv2-psy-result > * { animation: gv2-psy-arrive .6s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes gv2-psy-arrive { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .gv2-psy-view .gv2-psy-partial-dot, .gv2-psy-view .gv2-psy-result > * { animation: none; } }
+
+/* Filet de sécurité (reprise après rechargement, erreur sans animation) */
+.gv2-psy-view .gv2-psy2-fallback { position: absolute; left: 50%; top: 32%; transform: translateX(-50%); width: min(460px, calc(100% - 32px)); text-align: center; z-index: 3; }
+.gv2-psy-view .gv2-psy2-fallback strong { display: block; font: 500 20px/1.3 var(--font-family-display); color: var(--ink); }
+.gv2-psy-view .gv2-psy2-fallback p { margin: 10px 0 20px; color: var(--body); font-size: 15px; line-height: 1.6; }
+.gv2-psy-view .gv2-psy2-fallback-bar { height: 4px; margin: 18px auto 0; border-radius: 2px; background: var(--line); overflow: hidden; }
+.gv2-psy-view .gv2-psy2-fallback-bar i { display: block; height: 100%; background: var(--psychologist-sage, #718078); transition: width .6s ease; }
+.gv2-psy-view .gv2-psy2-cta { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 24px; border: 0; border-radius: 999px; background: var(--send-bg, #1d1d1f); color: var(--send-fg, #fff); font: 500 14px/1 var(--font-family-sans); cursor: pointer; box-shadow: 0 10px 24px -12px rgba(0,0,0,.5); transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s ease; }
+.gv2-psy-view .gv2-psy2-cta:hover { transform: translateY(-1px); box-shadow: 0 14px 28px -12px rgba(0,0,0,.55); }

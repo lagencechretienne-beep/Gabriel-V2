@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../icons.jsx';
 import { fetchV2, isLoginResponse, readApiPayload } from '../api-client.js';
+import { PsychoScene } from '../psy-v2/PsychoScene';
+import { ListenButton } from './ListenButton.jsx';
 
 /* ── PsychologueView ────────────────────────────────────────────────────
    Réimplémentation native (React) de l'agent Le Psychologue, jusqu'ici
@@ -546,8 +548,47 @@ function Statement({ label, text }) {
   if (!paragraphes.length) return null;
   return <div className="gv2-psy-statement">
     <div className="gv2-psy-statement-label">{label}</div>
-    {paragraphes.map((p, i) => <p key={i}>{p.libelle && <strong>{p.libelle} — </strong>}{formatInline(p.texte)}</p>)}
+    <div className="gv2-psy-statement-body">
+      {paragraphes.map((p, i) => p.libelle
+        ? <div className="gv2-psy-statement-row" key={i}>
+            <span className="gv2-psy-statement-key">{p.libelle}</span>
+            <p>{formatInline(p.texte)}</p>
+          </div>
+        : <p key={i}>{formatInline(p.texte)}</p>)}
+    </div>
   </div>;
+}
+
+/** Le message central : la phrase-clé en grand, puis ses appuis un par un, lisibles d'un coup d'œil. */
+function MessageCentral({ valeur }) {
+  const paragraphes = enParagraphes(valeur);
+  if (!paragraphes.length) return null;
+  const [premier, ...reste] = paragraphes;
+  return <div className="gv2-psy-central">
+    <div className="gv2-psy-statement-label">Message central</div>
+    <blockquote className="gv2-psy-central-main">{formatInline(premier.texte)}</blockquote>
+    {reste.length > 0 && <div className="gv2-psy-central-beats">
+      {reste.map((p, i) => <div className="gv2-psy-central-beat" key={i}>
+        {p.libelle && <span className="gv2-psy-statement-key">{p.libelle}</span>}
+        <p>{formatInline(p.texte)}</p>
+      </div>)}
+    </div>}
+  </div>;
+}
+
+/** Texte lu à voix haute pour la synthèse : l'essentiel, dans l'ordre de lecture. */
+function texteSynthese(recos, emo, brief) {
+  const bouts = [
+    brief.qui || brief.synthese,
+    brief.insight || brief.insight_cle,
+    ...enParagraphes(recos.verite_de_l_audience).map(p => p.texte),
+    ...enParagraphes(recos.message_central).map(p => p.texte),
+    ...enParagraphes(recos.promesse_authentique).map(p => p.texte),
+    ...enParagraphes(recos.insight_strategique_cle).map(p => p.texte),
+    ...enParagraphes(emo.espoir_decu).map(p => p.texte),
+    ...enParagraphes(emo.aspiration_nourrie).map(p => p.texte),
+  ];
+  return bouts.filter(Boolean).join('\n\n');
 }
 
 /** Bloc d'interprétation — psychologique ou socio-culturelle. */
@@ -1105,7 +1146,7 @@ const PREUVES_STATISTIQUES = [
   ['distribution_relevance', 'Pertinence des commentaires'],
 ];
 
-function PsychoResult({ data, onReset, onGoToStratege, onGoToCreateur }) {
+function PsychoResult({ data, onReset, onGoToStratege, onGoToCreateur, partial = false }) {
   const [tab, setTab] = useState('');
 
   const db = data.dashboard || {};
@@ -1234,9 +1275,17 @@ function PsychoResult({ data, onReset, onGoToStratege, onGoToCreateur }) {
         <CopyButton label="Copier la synthèse" getText={() => syntheseEnTexte(data)} />
         {data.analysis_id && <a className="gv2-psy-ghost-btn" href={`/export/pdf/${encodeURIComponent(data.analysis_id)}`}
                                download>Exporter en PDF</a>}
-        {data.analysis_id && <button type="button" className="gv2-psy-primary-btn" onClick={() => onGoToStratege(data)}>Construire la stratégie →</button>}
+        {data.analysis_id && !partial && <button type="button" className="gv2-psy-primary-btn" onClick={() => onGoToStratege(data)}>Construire la stratégie →</button>}
       </div>
     </div>
+
+    {partial && <div className="gv2-psy-partial" role="status" aria-live="polite">
+      <span className="gv2-psy-partial-dot" aria-hidden="true" />
+      <div>
+        <strong>Les premiers chiffres sont prêts.</strong>
+        <span> L'interprétation psychologique, les personas et la stratégie arrivent petit à petit — cette page se complète toute seule.</span>
+      </div>
+    </div>}
 
     {qui && <div className="gv2-psy-hero">
       <div className="gv2-psy-hero-label">Ce que dit cette audience</div>
@@ -1259,14 +1308,14 @@ function PsychoResult({ data, onReset, onGoToStratege, onGoToCreateur }) {
 
     {/* ── Synthèse : ce qu'un décideur doit retenir en deux minutes ─────── */}
     {actif === 'synthese' && <>
+      <div className="gv2-psy-listen-row">
+        <ListenButton label="Écouter la synthèse" getText={() => texteSynthese(recos, emo, brief)} />
+      </div>
       {(recos.verite_de_l_audience || recos.message_central || recos.promesse_authentique || recos.insight_strategique_cle) && (
         <Section title="Ce qu'il faut retenir" hint="La lecture stratégique en quatre phrases.">
           <div className="gv2-psy-card gv2-psy-card--plain gv2-psy-keypoints">
             <Statement label="Vérité de l'audience" text={recos.verite_de_l_audience} />
-            {recos.message_central && <div className="gv2-psy-reco-message">
-              <div className="gv2-psy-statement-label">Message central</div>
-              <blockquote>{formatInline(itemText(recos.message_central))}</blockquote>
-            </div>}
+            <MessageCentral valeur={recos.message_central} />
             <Statement label="Promesse authentique" text={recos.promesse_authentique} />
             <Statement label="Insight stratégique" text={recos.insight_strategique_cle} />
           </div>
@@ -2200,6 +2249,8 @@ export function PsychologueView({ workspace, onWorkspaceChange, onNavigateAgent,
   const [progress, setProgress] = useState(0);
   const [step, setStep] = useState('');
   const [result, setResult] = useState(null);
+  // Résultat partiel : le tableau de bord (mesuré, sans IA) arrive avant l'interprétation.
+  const [partialMode, setPartialMode] = useState(false);
   const [crossResult, setCrossResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const pollingRef = useRef(false);
@@ -2374,6 +2425,7 @@ export function PsychologueView({ workspace, onWorkspaceChange, onNavigateAgent,
           continue;
         }
         if (payload.status === 'done') {
+          setPartialMode(false);
           setResult(payload.data); setResultKind('single'); setStage('result');
           try { window.localStorage.removeItem(PENDING_JOB_KEY); } catch (_) {}
           await onWorkspaceChange?.();
@@ -2384,6 +2436,14 @@ export function PsychologueView({ workspace, onWorkspaceChange, onNavigateAgent,
         }
         setProgress(Math.min(95, Math.round(((Date.now() - startedAt) / ANALYSIS_EXPECTED_MS) * 100)));
         if (payload.step) setStep(payload.step);
+        // Affichage progressif : dès que les chiffres mesurés sont prêts, on les montre
+        // et on laisse l'interprétation, les personas et la stratégie arriver ensuite.
+        const part = payload.partial || {};
+        if (part.dashboard) {
+          setResult({ ...part.dashboard, ...(part.interpretation || {}),
+            ...(Array.isArray(part.personas) ? { personas: part.personas } : {}) });
+          setResultKind('single'); setPartialMode(true); setStage('result');
+        }
       }
       throw new Error('L’analyse prend plus de temps que prévu et continue en arrière-plan. Retrouvez-la dans le menu Analyses dans quelques minutes.');
     } catch (error) {
@@ -2611,7 +2671,7 @@ export function PsychologueView({ workspace, onWorkspaceChange, onNavigateAgent,
   }
 
   function reset() {
-    setStage('input'); setResult(null); setCrossResult(null); setErrorMsg('');
+    setStage('input'); setResult(null); setPartialMode(false); setCrossResult(null); setErrorMsg('');
     setUrl(''); setManualText(''); setPreviewCount(0);
     setTab('link'); setPlatform('youtube'); setFile(null); setUploading(false);
     setStatusMsg('Collez le lien d’une vidéo YouTube.'); setStatusTone('');
@@ -2693,7 +2753,12 @@ export function PsychologueView({ workspace, onWorkspaceChange, onNavigateAgent,
     }, 0);
   }
 
-  let content = <PsychoInput
+  // Saisie, chargement et erreur forment une seule scène : la barre se réduit en
+  // bille puis en orbe pendant l'analyse (conçue avec Lovable, branchée ici).
+  let content = <PsychoScene
+      status={stage === 'loading' ? 'loading' : stage === 'error' ? 'error' : 'input'}
+      progress={progress} step={step} isCross={resultKind === 'cross'}
+      errorMessage={errorMsg} onRetry={reset}
       tab={tab} onTabChange={changeTab}
       platform={platform} onPlatformChange={changePlatform}
       url={url} onUrlChange={changeUrl}
@@ -2716,11 +2781,9 @@ export function PsychologueView({ workspace, onWorkspaceChange, onNavigateAgent,
       onSuggest={suggest} onNavigateAgent={onNavigateAgent}
     />;
 
-  if (stage === 'loading') content = <PsychoLoading progress={progress} step={step} isCross={resultKind === 'cross'} crossSources={crossSources} />;
-  if (stage === 'error') content = <PsychoError message={errorMsg} onRetry={reset} />;
   if (stage === 'result' && resultKind === 'cross' && crossResult) content = <PsychoCrossResult data={crossResult} onReset={reset} onNavigateAgent={onNavigateAgent}
     onStrategeCross={goToStrategeFromCross} onStrategeAudience={goToStratege} onCreateurAudience={goToCreateurFor} />;
-  if (stage === 'result' && result) content = <PsychoResult data={result} onReset={reset} onGoToStratege={goToStratege}
+  if (stage === 'result' && result) content = <PsychoResult data={result} partial={partialMode} onReset={reset} onGoToStratege={goToStratege}
                                    onGoToCreateur={onNavigateAgent ? () => onNavigateAgent('createur') : undefined} />;
 
   return <div className="gv2-psy-view">{content}</div>;
