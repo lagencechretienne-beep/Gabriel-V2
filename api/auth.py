@@ -72,20 +72,9 @@ def init_auth(app):
     global _supabase, _google_enabled
     oauth.init_app(app)
 
-    client_id     = os.environ.get('GOOGLE_CLIENT_ID')
-    client_secret = os.environ.get('GOOGLE_CLIENT_SECRET')
-    if accounts_enabled() and client_id and client_secret:
-        _google_enabled = True
-        oauth.register(
-            name='google',
-            client_id=client_id,
-            client_secret=client_secret,
-            server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-            client_kwargs={'scope': 'openid email profile'},
-        )
-        print(f'[AUTH] Google OAuth configuré.')
-    else:
-        print('[AUTH] Google OAuth non configuré (GOOGLE_CLIENT_ID/SECRET manquants).')
+    # La connexion par Google est retirée (10/11/2026) : l'accès se fait uniquement par e-mail et mot de passe.
+    # _google_enabled reste False, même si GOOGLE_CLIENT_ID/SECRET sont présents dans l'environnement.
+    print('[AUTH] Connexion Google désactivée : e-mail et mot de passe uniquement.')
 
     supabase_url = os.environ.get('SUPABASE_URL')
     supabase_key = os.environ.get('SUPABASE_KEY')
@@ -460,6 +449,7 @@ def login_page():
     mode           = request.args.get('mode', 'login')
     error_msg = {
         'not_configured': 'Connexion Google non configurée.',
+        'google_disabled': "La connexion par Google n'est plus proposée. Utilisez votre adresse e-mail et votre mot de passe.",
         'auth_failed':    'Connexion Google échouée. Réessayez.',
         'accounts_disabled': "L'accès à l'application n'est pas encore ouvert sur cet environnement.",
     }.get(error, error)
@@ -518,6 +508,8 @@ def register():
 def auth_google():
     if not accounts_enabled():
         return redirect('/login?error=accounts_disabled')
+    return redirect('/login?error=google_disabled')
+    # Code conservé ci-dessous pour un éventuel retour de la connexion Google ; jamais atteint aujourd'hui.
     if not os.environ.get('GOOGLE_CLIENT_ID'):
         return redirect('/login?error=not_configured')
     # Le round-trip OAuth ne peut pas transporter notre propre query string —
@@ -535,6 +527,7 @@ def auth_google():
 def auth_google_callback():
     if not accounts_enabled():
         return redirect('/login?error=accounts_disabled')
+    return redirect('/login?error=google_disabled')
     safe_log_event('oauth_callback_received', metadata={'has_state': bool(request.args.get('state'))})
     plan = session.pop('pending_plan', '')
     try:

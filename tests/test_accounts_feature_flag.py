@@ -96,3 +96,22 @@ def test_deployed_accounts_require_supabase_configuration():
         'SUPABASE_KEY': 'server-key-placeholder',
     }
     assert production_safety_problems(configured) == []
+
+
+def test_la_connexion_google_est_retiree_meme_si_les_cles_sont_presentes(monkeypatch):
+    """10/11/2026 : l'accès se fait par e-mail et mot de passe uniquement."""
+    monkeypatch.setenv('AUTH_ENABLED', 'true')
+    monkeypatch.setenv('GABRIEL_ACCOUNTS_ENABLED', 'true')
+    monkeypatch.setenv('GOOGLE_CLIENT_ID', 'id-de-test')
+    monkeypatch.setenv('GOOGLE_CLIENT_SECRET', 'secret-de-test')
+    client = app.test_client()
+
+    for chemin in ('/auth/google', '/auth/google/callback'):
+        reponse = client.get(chemin)
+        assert reponse.status_code == 302
+        assert 'google_disabled' in reponse.headers['Location']
+
+    for page in ('/login', '/register'):
+        html = client.get(page).get_data(as_text=True)
+        assert 'Continuer avec Google' not in html and '/auth/google' not in html
+    assert 'Utilisez votre adresse e-mail et votre mot de passe' in client.get('/login?error=google_disabled').get_data(as_text=True)
