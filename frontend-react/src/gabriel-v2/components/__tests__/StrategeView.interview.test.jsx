@@ -140,7 +140,7 @@ describe('Génération depuis l’entretien', () => {
     render(<StrategeView workspace={WORKSPACE} />);
     await waitFor(() => screen.getByRole('button', { name: /Générer mon diagnostic/ }));
     await user.click(screen.getByRole('button', { name: /Générer mon diagnostic/ }));
-    await waitFor(() => expect(screen.getByText('Se positionner premium')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText('Se positionner premium').length).toBeGreaterThan(0));
     const appel = global.fetch.mock.calls.find(([url]) => url === '/strategize');
     const body = JSON.parse(appel[1].body);
     expect(body.context).toEqual({ offre: 'Coaching' });
@@ -181,7 +181,7 @@ describe('Génération depuis l’entretien', () => {
     await waitFor(() => screen.getByRole('button', { name: /Générer mon diagnostic/ }));
     await user.click(screen.getByRole('button', { name: /Générer mon diagnostic/ }));
     await vi.advanceTimersByTimeAsync(3100);
-    await waitFor(() => expect(screen.getByText('Décision liée')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText('Décision liée').length).toBeGreaterThan(0));
     const appel = global.fetch.mock.calls.find(([url]) => url === '/strategize');
     const body = JSON.parse(appel[1].body);
     expect(body.analysis_id).toBe('a-transmise');

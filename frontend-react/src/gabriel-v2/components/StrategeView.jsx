@@ -1,3 +1,4 @@
+import { StrategyBento } from './StrategyBento.jsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { Icon } from '../icons.jsx';
 import { fetchV2, isLoginResponse, readApiPayload } from '../api-client.js';
@@ -436,6 +437,8 @@ function Report({ strategy, onGoToCreateur, onRestart }) {
             {onRestart && <button type="button" onClick={onRestart}><Icon name="refresh" size={14} />Nouvelle analyse</button>}
           </div>
         </header>
+        <StrategyBento strategy={strategy} fmt={esc}
+          onOpenSection={key => containerRef.current?.querySelector(`#gv2-ariane-report-${key}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })} />
         {SECTIONS.map(s => <section key={s.key} id={`gv2-ariane-report-${s.key}`} className="gv2-ariane-report-section">
           <div className="gv2-ariane-report-section-head"><span>{s.num}</span><h2>{s.label}</h2></div>
           <s.Comp d={strategy} />
