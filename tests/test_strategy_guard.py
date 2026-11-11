@@ -124,7 +124,7 @@ def _lancer(monkeypatch, brain_context, psycho, reponses):
     from agents import stratege
     prompts = []
 
-    def faux_llm(prompt, max_tokens=5000, label=''):
+    def faux_llm(prompt, max_tokens=5000, label='', retry=None):
         prompts.append((label, prompt))
         if label == 'strategie_garde':
             extraits = json.loads(prompt.split('EXTRAITS :\n', 1)[1])
@@ -199,7 +199,7 @@ def test_la_memoire_injectee_dans_le_prompt_ne_suggere_aucun_prix(monkeypatch):
     from agents import stratege
     prompts = []
 
-    def faux_llm(prompt, max_tokens=5000, label=''):
+    def faux_llm(prompt, max_tokens=5000, label='', retry=None):
         prompts.append((label, prompt))
         return json.dumps({'strategie': {'decision_centrale': "Un atelier d'entrée pour débutants curieux d'IA locale."}})
     monkeypatch.setattr(stratege, '_call_llm', faux_llm)
@@ -221,7 +221,7 @@ def test_un_prix_de_la_memoire_repris_par_le_modele_est_retire_de_la_strategie(m
                 'critique': {'point_faible_principal': 'x', 'angle_contrarien': 'y', 'risque_non_couvert': 'z',
                              'ajustement_recommande': 'w', 'confidence_score_independant': 0.5, 'verdict': 'solide'}}
     from agents import stratege
-    monkeypatch.setattr(stratege, '_call_llm', lambda prompt, max_tokens=5000, label='': (
+    monkeypatch.setattr(stratege, '_call_llm', lambda prompt, max_tokens=5000, label='', retry=None: (
         json.dumps({n: 'Comme les cas passés.' for n in json.loads(prompt.split('EXTRAITS :\n', 1)[1])}) if label == 'strategie_garde'
         else json.dumps(reponses[label])))
     monkeypatch.setattr(stratege, '_load_rag_rules', lambda *a, **k: '')
@@ -265,7 +265,7 @@ def test_un_prix_invente_par_le_psychologue_est_retire_de_la_strategie():
 
 def test_le_stratege_ne_fait_plus_confiance_au_texte_du_psychologue(monkeypatch):
     from agents import stratege
-    monkeypatch.setattr(stratege, '_call_llm', lambda prompt, max_tokens=5000, label='': (
+    monkeypatch.setattr(stratege, '_call_llm', lambda prompt, max_tokens=5000, label='', retry=None: (
         json.dumps({n: 'Comme suggéré dans le rapport.' for n in json.loads(prompt.split('EXTRAITS :\n', 1)[1])}) if label == 'strategie_garde'
         else json.dumps({'strategie': {'pricing_logic': {'recommended_price_range': "Entrée à 9,90 €/mois pendant 3 mois."}}}) if label == 'strategie'
         else json.dumps({'point_faible_principal': 'x', 'angle_contrarien': 'y', 'risque_non_couvert': 'z', 'ajustement_recommande': 'w',
@@ -278,3 +278,40 @@ def test_le_stratege_ne_fait_plus_confiance_au_texte_du_psychologue(monkeypatch)
     strat = ctx.get('stratege')['strategie']
     assert '9,90' not in json.dumps({k: v for k, v in strat.items() if k != 'chiffres_retires'}, ensure_ascii=False)
     assert '9,90 €' in strat['chiffres_retires']
+
+
+def test_le_garde_fou_abandonne_la_reecriture_des_le_premier_lot_si_le_fournisseur_ne_repond_pas():
+    """Mistral saturé : chaque lot de réécriture attendait à son tour (plusieurs dizaines de secondes en tout).
+    Le remplacement déterministe garantit déjà l'absence de chiffre inventé : inutile d'insister."""
+    from agents.strategy_guard import guard_strategy, AMOUNT_PLACEHOLDER
+    strategie = {'points': [f"Vendre à {100 + i} € pièce" for i in range(20)]}    # 20 passages fautifs → 3 lots
+    appels = []
+
+    def en_panne(prompt):
+        appels.append(1)
+        raise RuntimeError('429')
+
+    propre, retires = guard_strategy(strategie, '', call_llm=en_panne, parse_json=lambda t: {})
+    assert len(appels) == 1, "un seul appel, pas un par lot ni un par tour"
+    assert all(AMOUNT_PLACEHOLDER in p and '€' not in p.replace(AMOUNT_PLACEHOLDER, '') for p in propre['points'])
+    assert len(retires) == 20
+
+
+def test_la_critique_et_le_garde_fou_utilisent_des_reessais_courts(monkeypatch):
+    import agents.stratege as stratege
+    vus = []
+    monkeypatch.setattr(stratege._llm, 'complete_text', lambda prompt, **kw: vus.append(kw['retry']) or '{}')
+    stratege._call_llm('x', label='strategie')
+    stratege._call_llm('x', label='critique', retry=stratege._llm.RETRY_QUICK)
+    assert vus[0] is stratege._llm.RETRY_SIMPLE and vus[0].max_attempts == 5      # la stratégie elle-même reste patiente
+    assert vus[1] is stratege._llm.RETRY_QUICK and vus[1].max_attempts == 2
+
+
+def test_les_appels_facultatifs_d_ariane_sont_branches_sur_les_reessais_courts():
+    """Garde-fou de câblage : critique et réécriture du garde-fou ne doivent jamais retomber sur les 5 essais patients."""
+    import inspect
+    import agents.stratege as stratege
+    source = inspect.getsource(stratege)
+    assert 'label="critique", retry=_llm.RETRY_QUICK' in source
+    assert 'label="strategie_garde", retry=_llm.RETRY_QUICK' in source
+    assert 'label="strategie")' in source or 'label="strategie"' in source          # la stratégie elle-même, patiente

@@ -130,6 +130,11 @@ RETRY_RESILIENT = RetryPolicy(max_attempts=6, exponential=True, jitter=True)
 # refusée n'est pas facturée.
 RETRY_SIMPLE = RetryPolicy(max_attempts=5, base_delay=8.0, jitter=True)
 
+# Appels FACULTATIFS (critique d'Ariane, réécriture du garde-fou) : si Mistral sature, mieux vaut s'en passer vite
+# que faire attendre l'utilisateur. Constaté le 11/2026 : avec RETRY_SIMPLE, ces appels annexes ajoutaient chacun
+# jusqu'à ~35 s à une stratégie déjà longue.
+RETRY_QUICK = RetryPolicy(max_attempts=2, base_delay=4.0)
+
 # Aucun réessai : sites qui préfèrent échouer vite et se rabattre sur une
 # réponse de secours plutôt que faire attendre l'utilisateur (voix, rendu
 # de ton — où une seconde d'attente se remarque).

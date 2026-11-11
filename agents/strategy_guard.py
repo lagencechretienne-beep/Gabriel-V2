@@ -175,8 +175,10 @@ def _rewrite_batches(leaves, sources: str, call_llm, parse_json) -> int:
         try:
             fixed = parse_json(call_llm(prompt))
         except Exception as exc:
-            print(f"[STRATÈGE/garde] lot de réécriture indisponible : {exc}")
-            continue
+            # Fournisseur saturé : inutile d'essayer les lots suivants (chacun attendrait à son tour) ;
+            # le remplacement déterministe par un emplacement explicite prend le relais.
+            print(f"[STRATÈGE/garde] réécriture abandonnée, le fournisseur ne répond pas : {exc}")
+            break
         if not isinstance(fixed, dict):
             continue
         for n, (container, key) in enumerate(lot):

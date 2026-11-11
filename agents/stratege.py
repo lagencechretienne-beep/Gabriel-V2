@@ -271,7 +271,7 @@ def _psycho_query_text(psycho_context: dict) -> str:
 
 # ── LLM call ─────────────────────────────────────────────────────────────────
 
-def _call_llm(prompt, max_tokens=5000, label=""):
+def _call_llm(prompt, max_tokens=5000, label="", retry=None):
     """Appelle le LLM via la couche fournisseur unifiée (``core.llm_client``).
 
     Timeout à 270 s : sous le timeout Gunicorn (300 s), pour garantir une erreur
@@ -284,7 +284,7 @@ def _call_llm(prompt, max_tokens=5000, label=""):
         tier="deep",
         max_tokens=max_tokens,
         timeout_ms=270_000,
-        retry=_llm.RETRY_SIMPLE,
+        retry=retry or _llm.RETRY_SIMPLE,
         label=label,
         throttled=False,
     )
@@ -449,7 +449,7 @@ Le confidence_score_independant est TA propre estimation (0 à 1), indépendante
     return critic.review(
         STRATEGY_CRITIQUE, prompt,
         call_llm=lambda p, max_tokens: _call_llm(p, max_tokens=max_tokens,
-                                                 label="critique"),
+                                                 label="critique", retry=_llm.RETRY_QUICK),
         parse_json=_parse_json, max_tokens=1500,
     ).data
 
@@ -703,7 +703,7 @@ Si les données d'audience sont insuffisantes, marque les hypothèses avec '(à 
         _sources = sources_for(brain_context, measured_psycho(psycho_data), title)
 
         def _rewrite(p):
-            return _call_llm(p, max_tokens=4000, label="strategie_garde")
+            return _call_llm(p, max_tokens=4000, label="strategie_garde", retry=_llm.RETRY_QUICK)
 
         retires = []
         if strat:
