@@ -14,7 +14,8 @@
     "lenis": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "vite": "latest"
+    "vite": "latest",
+    "voice-glow": "0.3.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.1",

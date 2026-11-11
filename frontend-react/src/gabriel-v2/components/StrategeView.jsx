@@ -1,3 +1,4 @@
+import { ComposerGlow } from './ComposerGlow.jsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { Icon } from '../icons.jsx';
 import { fetchV2, isLoginResponse, readApiPayload } from '../api-client.js';
@@ -1052,6 +1053,7 @@ export function StrategeView({ workspace, onWorkspaceChange, onNavigateAgent, on
             </select>
           )}
         </div>
+        <ComposerGlow processing={sending}>
         <div className="gv2-strat-composer">
           {dicteeDisponible && <button type="button" className={`gv2-strat-mic${isRecording ? ' is-recording' : ''}`}
             onClick={toggleDictation} disabled={sending} aria-label={isRecording ? 'Arrêter la dictée' : 'Répondre à la voix'} title="Parler">
@@ -1062,6 +1064,7 @@ export function StrategeView({ workspace, onWorkspaceChange, onNavigateAgent, on
             onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); envoyerReponse(); } }} />
           <button type="button" className="gv2-strat-send" disabled={sending || !interviewInput.trim()} onClick={envoyerReponse} aria-label="Envoyer">Envoyer</button>
         </div>
+        </ComposerGlow>
         <p className="gv2-strat-composer-hint">Entrée pour envoyer <span>·</span> Maj + Entrée pour un saut de ligne</p>
       </div>
     </div>;

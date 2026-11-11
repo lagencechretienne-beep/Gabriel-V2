@@ -1,3 +1,4 @@
+import { ComposerGlow } from './ComposerGlow.jsx';
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Icon } from '../icons.jsx';
 import { agents } from '../agent-registry.js';
@@ -636,6 +637,7 @@ export function CreatorConversation({ workspace, lastAnalysis, creatorHandoff, s
           <i aria-hidden="true" />
         </button>
       </div>
+      <ComposerGlow processing={isGenerating}>
       <form className={`gv2-creator-composer${result ? ' is-refining' : ''}`} onSubmit={event => { event.preventDefault(); submit(); }}>
         <label className="gv2-visually-hidden" htmlFor="gv2-creator-request">{result ? 'Affiner cette version' : 'Nouvelle création'}</label>
         <textarea id="gv2-creator-request" ref={inputRef} value={input} rows="2" maxLength="5000" disabled={isGenerating} onChange={event => setInput(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submit(); } }} placeholder={result ? 'Décrivez la modification à appliquer…' : 'Décrivez le contenu que vous souhaitez créer…'} aria-label={result ? 'Demande de modification' : 'Demande de création'} />
@@ -644,6 +646,7 @@ export function CreatorConversation({ workspace, lastAnalysis, creatorHandoff, s
           <div><button type="button" className={`gv2-creator-composer-icon${isListening ? ' is-listening' : ''}`} onClick={startDictation} aria-label="Dicter la demande" title="Dicter la demande"><Icon name="mic" size={19} /></button><button type="submit" className="gv2-creator-submit" disabled={isGenerating || !input.trim()} aria-label={isGenerating ? 'Création en cours' : result ? 'Appliquer la modification' : 'Créer le contenu'}>{isGenerating ? <span className="gv2-creator-submit-spinner" /> : <Icon name="send" size={21} />}</button></div>
         </div>
       </form>
+      </ComposerGlow>
     </footer>
   </section>;
 }
