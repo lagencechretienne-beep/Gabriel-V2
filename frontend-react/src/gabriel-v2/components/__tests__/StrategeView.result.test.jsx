@@ -65,22 +65,8 @@ describe('Reprise d’une stratégie déjà enregistrée', () => {
       [/^\/strategies\/s-2$/, () => ({ json: { success: true, strategy_result: STRATEGIE } })],
     ]);
     render(<StrategeView workspace={WORKSPACE_DONE} />);
-    await waitFor(() => expect(screen.getAllByText(/Lancer une offre premium/).length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.getByText(/Lancer une offre premium/)).toBeInTheDocument());
     expect(screen.getByRole('heading', { name: 'Synthèse' })).toBeInTheDocument();
-  });
-});
-
-describe('Vue d’ensemble Bento dans le rapport', () => {
-  it('ouvre le rapport sur la vue d’ensemble, avant les cinq sections détaillées', async () => {
-    global.fetch = routeFetch([
-      [/^\/strategies\/s-2$/, () => ({ json: { success: true, strategy_result: STRATEGIE } })],
-    ]);
-    render(<StrategeView workspace={WORKSPACE_DONE} />);
-    const vue = await screen.findByRole('region', { name: /Vue d’ensemble de la stratégie/ });
-    expect(vue).toHaveTextContent('Accélérateur Solo');
-    const premiereSection = screen.getByRole('heading', { name: 'Synthèse' });
-    // La vue d'ensemble précède la première section dans le document
-    expect(vue.compareDocumentPosition(premiereSection) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });
 
@@ -96,7 +82,7 @@ describe('Génération classique depuis une analyse existante', () => {
     await waitFor(() => expect(screen.getByText('Une analyse est disponible pour ce dossier')).toBeInTheDocument());
     await user.click(screen.getByRole('button', { name: 'Générer la stratégie' }));
     await vi.advanceTimersByTimeAsync(3100);
-    await waitFor(() => expect(screen.getAllByText(/Lancer une offre premium/).length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.getByText(/Lancer une offre premium/)).toBeInTheDocument());
   });
 
   it('affiche les champs manquants renvoyés par le serveur, sans deviner', async () => {
@@ -167,7 +153,7 @@ describe('Rapport : champs renvoyés sous forme d’objet', () => {
       [/^\/strategies\/s-2$/, () => ({ json: { success: true, strategy_result: strategie } })],
     ]);
     render(<StrategeView workspace={WORKSPACE_DONE} />);
-    await waitFor(() => expect(screen.getAllByText(/Lancer une offre premium/).length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.getByText(/Lancer une offre premium/)).toBeInTheDocument());
     expect(document.body.textContent).not.toContain('[object Object]');
     expect(screen.getByText(/L’erreur qui fait perdre 3h/)).toBeInTheDocument();
     expect(screen.getByText(/0:10-0:30 : Scénario réel/)).toBeInTheDocument();
@@ -180,7 +166,7 @@ describe('Rapport : chaque bloc disparaît s’il est vide', () => {
       [/^\/strategies\/s-2$/, () => ({ json: { success: true, strategy_result: { decision_centrale: 'x' } } })],
     ]);
     render(<StrategeView workspace={WORKSPACE_DONE} />);
-    await waitFor(() => expect(screen.getAllByText('x').length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.getByText('x')).toBeInTheDocument());
     // Le rapport rend désormais toutes les sections à la suite (plus
     // d'onglets à ouvrir un par un) : un bloc vide doit rester absent
     // partout dans le document, pas seulement hors d'un onglet fermé.
@@ -193,7 +179,7 @@ describe('Rapport : chaque bloc disparaît s’il est vide', () => {
       [/^\/strategies\/s-2$/, () => ({ json: { success: true, strategy_result: STRATEGIE } })],
     ]);
     render(<StrategeView workspace={WORKSPACE_DONE} />);
-    await waitFor(() => expect(screen.getAllByText('Fondations').length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.getByText('Fondations')).toBeInTheDocument());
     expect(screen.getByText('Positionner l’offre')).toBeInTheDocument();
     expect(screen.getByText('10 prospects qualifiés')).toBeInTheDocument();
   });
