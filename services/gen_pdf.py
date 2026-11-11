@@ -737,6 +737,11 @@ def generate_analysis_pdf(entry, include_strategy=True):  # noqa: F811 — rempl
         for titre, val in strat:
             story += _bloc(titre, val, st, puces=isinstance(val, list))
 
+    # Stratégie d'Ariane enregistrée avec l'analyse : le PDF d'analyse l'incluait avant la refonte
+    # (régression constatée par tests/test_tool_reporting.py), on la rétablit.
+    if include_strategy and entry.get('strategie_result'):
+        story += _strat_elements(entry['strategie_result'], st)
+
     story += [Spacer(1, 6*mm), HRFlowable(width='100%', thickness=.4, color=_GRIS_MID), Spacer(1, 2*mm), _footer(st)]
     doc.build(story)
     return buf.getvalue()

@@ -187,7 +187,7 @@ class TestEquivalenceAvecLesImplementationsExistantes:
     def test_le_stratege_rend_la_critique_a_l_identique(self, monkeypatch):
         import agents.stratege as stratege
         monkeypatch.setattr(stratege, '_call_llm',
-                            lambda p, max_tokens=1500, label='': self.REPONSE_STRATEGIE)
+                            lambda p, max_tokens=1500, label='', **kw: self.REPONSE_STRATEGIE)
         assert stratege._critique_strategie({}, 'psy', 'biz') == {
             'point_faible_principal': 'Le prix', 'angle_contrarien': 'Inverse',
             'risque_non_couvert': 'Plateforme', 'ajustement_recommande': 'Tester',
@@ -196,14 +196,14 @@ class TestEquivalenceAvecLesImplementationsExistantes:
     def test_le_stratege_rend_une_critique_tronquee_sans_la_jeter(self, monkeypatch):
         import agents.stratege as stratege
         monkeypatch.setattr(stratege, '_call_llm',
-                            lambda p, max_tokens=1500, label='': '{"verdict":"fragile"}')
+                            lambda p, max_tokens=1500, label='', **kw: '{"verdict":"fragile"}')
         assert stratege._critique_strategie({}, 'psy', 'biz') == {'verdict': 'fragile'}
 
     def test_une_panne_du_stratege_reste_une_RuntimeError(self, monkeypatch):
         """`Stratege.run` l'absorbe pour ne pas faire tomber la stratégie."""
         import agents.stratege as stratege
 
-        def _casse(p, max_tokens=1500, label=''):
+        def _casse(p, max_tokens=1500, label='', **kw):
             raise RuntimeError('panne')
 
         monkeypatch.setattr(stratege, '_call_llm', _casse)
