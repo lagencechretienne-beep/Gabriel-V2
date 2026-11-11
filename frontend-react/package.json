@@ -14,6 +14,7 @@
     "lenis": "latest",
     "react": "latest",
     "react-dom": "latest",
+    "thinking-orbs": "0.3.2",
     "vite": "latest",
     "voice-glow": "0.3.0"
   },

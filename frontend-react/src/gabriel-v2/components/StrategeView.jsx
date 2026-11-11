@@ -1,4 +1,5 @@
 import { ComposerGlow } from './ComposerGlow.jsx';
+import { ThinkingPill, ThinkingOrbMark } from './ThinkingPill.jsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { Icon } from '../icons.jsx';
 import { fetchV2, isLoginResponse, readApiPayload } from '../api-client.js';
@@ -957,6 +958,7 @@ export function StrategeView({ workspace, onWorkspaceChange, onNavigateAgent, on
     const phases = ['Synthèse', 'Diagnostic', 'Priorités', "Plan d'action"];
     const phase = phases[Math.min(phases.length - 1, Math.floor((progress / 100) * phases.length))];
     return <div className="gv2-ariane-generating">
+      <ThinkingOrbMark state="solving" />
       <svg viewBox="0 0 240 60" aria-hidden="true">
         <line x1="4" y1="30" x2="236" y2="30" className="gv2-ariane-generating-line" />
         <line x1="4" y1="30" x2="236" y2="30" className="gv2-ariane-generating-line--fill" style={{ strokeDashoffset: 240 - (progress / 100) * 240 }} />
@@ -988,7 +990,7 @@ export function StrategeView({ workspace, onWorkspaceChange, onNavigateAgent, on
       <div className="gv2-strat-chat" role="log" aria-live="polite" aria-label="Conversation avec Ariane">
         {messages.map((m, i) => <ChatMessage key={i} role={m.role} content={m.content} observation={m.observation || m.strategic_observation}
           hero={!hasUserReply && i === 0 && m.role !== 'user'} />)}
-        {sending && <article className="gv2-strat-msg gv2-strat-msg--assistant is-thinking"><span>Ariane structure votre réponse…</span></article>}
+        {sending && <article className="gv2-strat-msg gv2-strat-msg--assistant is-thinking"><ThinkingPill state="weaving">Ariane structure votre réponse…</ThinkingPill></article>}
 
         {!hasUserReply && dicteeDisponible && !voiceCardState && <div className="gv2-ariane-hero-actions">
           <button type="button" className="gv2-ariane-hero-cta" onClick={toggleDictation}>Commencer l'entretien à la voix</button>

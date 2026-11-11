@@ -1,4 +1,5 @@
 import { ComposerGlow } from './ComposerGlow.jsx';
+import { ThinkingPill } from './ThinkingPill.jsx';
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Icon } from '../icons.jsx';
 import { agents } from '../agent-registry.js';
@@ -245,7 +246,7 @@ function CreationMessage({ messageId, result, sources, label = 'Création termin
 
 function Message({ message, contentType, onCopy, onSave, onDownload, onPrepareRefinement, onRegenerate, onRetry, saving, saved, copied }) {
   if (message.kind === 'intro') return <article className="gv2-creator-message gv2-creator-message--intro"><div className="gv2-creator-message-meta"><img src={agents.createur.portrait} alt="" /><strong>Le Créateur</strong></div><p>{message.content}</p></article>;
-  if (message.kind === 'status') return <article className="gv2-creator-message gv2-creator-message--status"><span className="gv2-creator-pulse" /><p>{message.content}</p></article>;
+  if (message.kind === 'status') return <article className="gv2-creator-message gv2-creator-message--status"><ThinkingPill state="composing">{message.content}</ThinkingPill></article>;
   if (message.kind === 'result') return <CreationMessage messageId={message.id} result={message.result} sources={message.sources} label={message.label} contentType={contentType} onCopy={onCopy} onSave={onSave} onDownload={onDownload} onPrepareRefinement={onPrepareRefinement} onRegenerate={onRegenerate} saving={saving} saved={saved} copied={copied} />;
   if (message.kind === 'error') return <article className="gv2-creator-message gv2-creator-message--error"><span>!</span><div><p>{message.content}</p>{message.retryRequest && onRetry && <button type="button" className="gv2-creator-retry" onClick={() => onRetry(message.retryRequest, message.id)}><Icon name="refresh" size={14} />Relancer la création</button>}</div></article>;
   return <article className="gv2-creator-message gv2-creator-message--user"><div className="gv2-creator-message-meta"><span className="gv2-creator-user-mark">Vous</span></div><p>{message.content}</p></article>;
