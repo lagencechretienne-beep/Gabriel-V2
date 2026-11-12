@@ -266,7 +266,8 @@ def test_cross_reuse_gives_each_session_its_own_identity_and_does_not_rebill_cac
 
     first_cross_id = _run_cross()
     assert len(llm_calls) == 2
-    assert len(deductions) == 1  # 2 sources fraîches facturées la première fois
+    assert len(deductions) == 1  # tarif fixe, une seule fois, quel que soit le nombre de sources fraîches
+    assert deductions[0]['amount'] == 180 and deductions[0]['reason'] == 'psychologue_cross'
 
     second_cross_id = _run_cross()
     assert len(llm_calls) == 2, "les deux vidéos sont déjà en cache : pas de second appel LLM"

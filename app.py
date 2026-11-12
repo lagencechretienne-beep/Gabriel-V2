@@ -1504,8 +1504,9 @@ def launch_psychologue_cross_analysis():
             'plan': usage.get('plan', 'free'),
         }), 403
 
-    cost_per_source = _db.CREDIT_COSTS['psychologue']
-    maximum_cost = cost_per_source * len(sources)
+    # Tarif fixe : une Cross Analyse coûte 180 crédits, quel que soit le nombre d'audiences (2 à 5).
+    cross_cost = _db.CREDIT_COSTS['psychologue_cross']
+    maximum_cost = cross_cost
     try:
         _cross_has_credits = _has_enough_operation_credits(uid, maximum_cost, email=email)
         _cross_balance = _db.get_user_credits(uid) if not _cross_has_credits else None
@@ -1516,7 +1517,7 @@ def launch_psychologue_cross_analysis():
             'error': 'credits_insufficient',
             'upgrade_required': True,
             'credits': _cross_balance,
-            'cost_per_source': cost_per_source,
+            'cost': cross_cost,
             'estimated_cost': maximum_cost,
         }), 402
 
@@ -1688,15 +1689,14 @@ def launch_psychologue_cross_analysis():
                 'embedding_version': 'not_used_in_cross_v1',
             })
             completed_sources = len(cross_result.get('source_analyses') or [])
-            # Une source servie depuis le cache n'a déclenché aucun nouvel appel
-            # LLM (voir _analyze_one_source) : la facturer au même tarif qu'une
-            # analyse fraîche reviendrait à débiter un travail non effectué.
+            # Tarif fixe de 180 crédits, débité UNE seule fois. Une comparaison dont toutes les audiences viennent du
+            # cache n'a déclenché aucun nouvel appel LLM : la facturer reviendrait à débiter un travail non effectué.
             billable_sources = sum(
                 1 for item in cross_result.get('source_analyses') or []
                 if isinstance(item, dict) and not item.get('analysis_cache_hit')
             )
             if billable_sources:
-                _deduct_legacy_credits(uid, cost_per_source * billable_sources, reason='psychologue_cross')
+                _deduct_legacy_credits(uid, cross_cost, reason='psychologue_cross')
             completed_status = cross_result.get('status', 'completed')
             persisted = _db.update_cross_analysis(
                 cross_analysis_id, uid, status=completed_status,
@@ -4950,6 +4950,10 @@ def stripe_checkout():
             customer_email      = email or None,
             metadata            = {'user_id': uid, 'plan_slug': plan},
             client_reference_id = uid,
+            # Les métadonnées de la SESSION de paiement ne sont pas copiées sur l'abonnement : sans ceci, le webhook
+            # (événements customer.subscription.*) ne retrouvait jamais l'utilisateur et le plan n'était jamais
+            # mis à jour après un paiement (constaté en relisant le code le 13/11/2026).
+            subscription_data   = {'metadata': {'user_id': uid, 'plan_slug': plan}},
         )
         return jsonify({'url': session_obj.url})
     except ImportError:

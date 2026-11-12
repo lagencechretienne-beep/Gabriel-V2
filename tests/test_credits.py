@@ -62,7 +62,8 @@ def test_get_user_credits_no_user_id():
 
 def test_agent_credit_costs_match_current_pricing():
     assert _db.CREDIT_COSTS == {
-        'psychologue': 80,
+        'psychologue': 90,
+        'psychologue_cross': 180,
         'stratege': 50,
         'createur': 20,
     }

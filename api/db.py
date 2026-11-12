@@ -1402,9 +1402,10 @@ class CreditDeductionFailed(CreditError):
 # le Créateur le moins cher (il exécute une décision déjà construite par les
 # deux agents précédents, pas de travail d'analyse).
 CREDIT_COSTS = {
-    'psychologue': 80,
-    'stratege':    50,
-    'createur':    20,
+    'psychologue':       90,
+    'psychologue_cross': 180,   # tarif fixe d'une Cross Analyse, quel que soit le nombre d'audiences comparées
+    'stratege':          50,
+    'createur':          20,
 }
 
 
