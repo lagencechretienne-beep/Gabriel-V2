@@ -1,0 +1,3 @@
+{# Statistiques de visites — rendu seulement si ANALYTICS_* est configuré (voir core/analytics.py) et seulement
+   sur les pages publiques qui incluent ce fichier. #}
+{% if analytics %}<script defer src="{{ analytics.src }}"{% for nom, valeur in analytics.attrs.items() %} {{ nom }}="{{ valeur }}"{% endfor %}></script>{% endif %}

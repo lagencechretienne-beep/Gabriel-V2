@@ -51,6 +51,7 @@ from core.provider_cost_guard import (
     settle_provider_success,
 )
 from core.credit_ledger import credit_ledger_enabled
+from core.analytics import analytics_config, csp_avec_analytics
 from core.memory import GabrielMemory
 from core.business_context import (
     get_user_profile as _get_user_profile,
@@ -224,6 +225,12 @@ init_auth(app)
 app.register_blueprint(auth_bp)
 if _PROSPECT_ENABLED:
     app.register_blueprint(prospect_bp)
+
+
+@app.context_processor
+def _inject_analytics():
+    """Statistiques de visites : None tant que ANALYTICS_* n'est pas configuré (voir core/analytics.py)."""
+    return {'analytics': analytics_config()}
 
 
 @app.context_processor
@@ -544,7 +551,7 @@ def _security_headers(response):
         response.headers.setdefault('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
     # CSP : bloque l'exfiltration XSS tout en autorisant les CDN fonts et le JS inline existant
     if not response.headers.get('Content-Security-Policy'):
-        response.headers['Content-Security-Policy'] = (
+        _csp = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' https://js.stripe.com; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
@@ -562,6 +569,7 @@ def _security_headers(response):
             "object-src 'none'; "
             "base-uri 'self';"
         )
+        response.headers['Content-Security-Policy'] = csp_avec_analytics(_csp, analytics_config())
     # Les PAGES HTML ne doivent jamais être servies depuis le cache navigateur :
     # sinon une itération d'interface (comme la refonte du Créateur) reste
     # invisible tant que l'utilisateur ne vide pas son cache. On ne touche pas

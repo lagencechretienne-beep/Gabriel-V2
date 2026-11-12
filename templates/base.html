@@ -472,6 +472,7 @@
     @media (max-width: 680px) { .is-embedded-agent .app-content { padding: 20px 16px 36px; } }
   </style>
   {% endif %}
+{% if request.path in ('/tarifs', '/en-savoir-plus') %}{% include "_analytics.html" %}{% endif %}
 </head>
 <body class="page-{{ active_page }}{% if embedded %} is-embedded-agent{% endif %}" data-office="{{ active_page }}">
 
