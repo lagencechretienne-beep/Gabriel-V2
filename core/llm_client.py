@@ -41,6 +41,7 @@ import random
 import threading
 import time
 from abc import ABC, abstractmethod
+from core.typographie import retirer_tirets
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -524,6 +525,8 @@ def complete(prompt: str, *, tier: str = "deep", max_tokens: int = 5000,
                 print(f"[LLM_TRUNCATION] label={label or '?'} model={response.model} max_tokens={max_tokens} "
                       f"completion_tokens={response.completion_tokens} "
                       f"— réponse coupée, JSON probablement incomplet")
+            # Texte écrit par l'IA : jamais de tiret de ponctuation (voir core/typographie.py).
+            response.text = retirer_tirets(response.text)
             return response
 
         except Exception as exc:

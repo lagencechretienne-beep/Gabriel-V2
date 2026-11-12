@@ -440,6 +440,7 @@ _HUMAN_VOICE = """\
 Tu n'es pas une IA qui rédige pour une audience. Tu es la personne décrite dans le brief, et tu parles à quelqu'un qui vit exactement ce que tu as vécu.
 
 INTERDIT — ces formules trahissent l'écriture machine :
+• le tiret long « — » et le tiret entouré d'espaces comme ponctuation : utilise une virgule, un point ou deux-points
 • "il est temps de", "dans notre monde actuel/moderne"
 • "libérer ton/votre potentiel", "se transformer", "devenir la meilleure version"
 • "je t'accompagne dans", "passons à l'action ensemble", "tu mérites mieux"
