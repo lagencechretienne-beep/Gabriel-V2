@@ -1,3 +1,4 @@
+import { ListenButton } from './ListenButton.jsx';
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Icon } from '../icons.jsx';
 import { agents } from '../agent-registry.js';
@@ -234,6 +235,7 @@ function CreationMessage({ messageId, result, sources, label = 'Création termin
         <button type="button" onClick={() => onPrepareRefinement('Propose une variante A/B avec un angle nettement différent, tout en gardant le même objectif.') }><Icon name="split" size={15} />Variante A/B</button>
         <button type="button" onClick={onRegenerate}><Icon name="refresh" size={15} />Régénérer</button>
         <button type="button" onClick={() => onCopy(content, messageId)}><Icon name={copied ? 'check' : 'copy'} size={15} />{copied ? 'Copié' : 'Copier'}</button>
+        <ListenButton variant="player" className="gv2-creator-listen" label="Écouter" title="Le Créateur vous lit le contenu" getText={() => content} />
         <button type="button" onClick={() => onDownload(content)}><Icon name="download" size={15} />Télécharger</button>
         <button type="button" onClick={onSave} disabled={saving || saved}><Icon name={saved ? 'check' : 'file'} size={15} />{saving ? 'Sauvegarde…' : saved ? 'Sauvegardé' : 'Sauvegarder'}</button>
       </div>

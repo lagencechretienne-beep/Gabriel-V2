@@ -394,11 +394,18 @@ function PsychoError({ message, onRetry }) {
 
 /* ── Résultat — analyse simple ───────────────────────────────────────── */
 
-function StatChip({ value, count, label, tone }) {
-  return <div className="gv2-psy-stat-chip">
+const TICKS = 40;
+/** Carte de chiffre clé : libellé, grand chiffre, et une jauge à graduations qui montre la part. */
+function StatChip({ value, count, label, tone, ratio }) {
+  const part = Math.max(0, Math.min(1, Number.isFinite(ratio) ? ratio : (parseFloat(String(value)) || 0) / 100));
+  const pleins = Math.round(part * TICKS);
+  return <div className={`gv2-psy-stat-chip${tone ? ` is-${tone}` : ''}`}>
+    <div className="gv2-psy-stat-lbl">{label}</div>
     <div className={`gv2-psy-stat-val${tone ? ` is-${tone}` : ''}`}>{value}</div>
     {count != null && <div className="gv2-psy-stat-count">{count}</div>}
-    <div className="gv2-psy-stat-lbl">{label}</div>
+    <div className="gv2-psy-ticks" aria-hidden="true">
+      {Array.from({ length: TICKS }, (_, i) => <i key={i} className={i < pleins ? 'is-on' : ''} style={{ '--n': i }} />)}
+    </div>
   </div>;
 }
 
@@ -438,29 +445,63 @@ const DONUT_COLORS = [
   'var(--core-champagne)', 'var(--muted)',
 ];
 
-/** Camembert évidé — jusqu'à 8 tranches, légende chiffrée en dessous. */
-function Donut({ slices, size = 128 }) {
+/** Répartition en jauge ou en anneau — segments arrondis, chiffre au centre, légende chiffrée.
+ *  Inspiré d'une carte « dépenses par service » : on bascule entre deux lectures du même jeu de données. */
+function arcPath(cx, cy, r, a0, a1) {
+  // Angles en degrés, 0° = droite, sens horaire à l'écran (y vers le bas).
+  const rad = d => (d * Math.PI) / 180;
+  const p = d => [cx + r * Math.cos(rad(d)), cy + r * Math.sin(rad(d))];
+  const [x0, y0] = p(a0); const [x1, y1] = p(a1);
+  return `M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${r} ${r} 0 ${Math.abs(a1 - a0) > 180 ? 1 : 0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+}
+
+function Donut({ slices, size = 128, title, subtitle, defaultMode = 'gauge' }) {
+  const [mode, setMode] = useState(defaultMode);
   const clean = (Array.isArray(slices) ? slices : [])
     .filter(s => s && typeof s.value === 'number' && s.value > 0);
   const total = clean.reduce((sum, s) => sum + s.value, 0);
   if (!total) return null;
-  const r = 42;
-  const c = 2 * Math.PI * r;
-  let offset = 0;
-  return <div className="gv2-psy-donut">
-    <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true">
-      <circle cx="50" cy="50" r={r} fill="none" stroke="var(--line)" strokeWidth="14" />
-      {clean.map((s, i) => {
-        const length = (s.value / total) * c;
-        const el = <circle key={i} cx="50" cy="50" r={r} fill="none"
-          stroke={DONUT_COLORS[i % DONUT_COLORS.length]} strokeWidth="14"
-          strokeDasharray={`${length} ${c - length}`} strokeDashoffset={-offset}
-          transform="rotate(-90 50 50)" />;
-        offset += length;
-        return el;
-      })}
-    </svg>
-    <ul className="gv2-psy-donut-legend">
+  const top = clean.reduce((best, s) => (s.value > best.value ? s : best), clean[0]);
+  const topPct = Math.round((top.value / total) * 100);
+  const stroke = 15, r = 78, cx = 100, cy = mode === 'gauge' ? 98 : 100;
+  const span = mode === 'gauge' ? 180 : 360;
+  const start = mode === 'gauge' ? 180 : -90;
+  // Les bouts arrondis débordent d'un demi-trait : on les compense pour garder un vrai espace entre segments.
+  const capDeg = (stroke / 2 / r) * (180 / Math.PI);
+  const gapDeg = clean.length > 1 ? 3.2 : 0;
+  let cursor = start;
+  const arcs = clean.map((s, i) => {
+    const sweep = (s.value / total) * span;
+    const a0 = cursor + (clean.length > 1 ? capDeg + gapDeg / 2 : 0);
+    const a1 = cursor + sweep - (clean.length > 1 ? capDeg + gapDeg / 2 : 0);
+    cursor += sweep;
+    // Un segment trop court pour ses bouts devient un simple point arrondi.
+    const mid = (a0 + a1) / 2;
+    return { s, i, d: a1 - a0 > 0.8 ? arcPath(cx, cy, r, a0, a1) : arcPath(cx, cy, r, mid - .4, mid + .4) };
+  });
+  const resume = clean.map(s => `${s.label} ${Math.round((s.value / total) * 100)} %`).join(', ');
+  return <div className="gv2-psy-gauge">
+    {(title || clean.length > 1) && <div className="gv2-psy-gauge-head">
+      <div>{title && <strong>{title}</strong>}{subtitle && <span>{subtitle}</span>}</div>
+      <div className="gv2-psy-gauge-toggle" role="group" aria-label="Type d'affichage">
+        <button type="button" aria-pressed={mode === 'ring'} onClick={() => setMode('ring')}>Anneau</button>
+        <button type="button" aria-pressed={mode === 'gauge'} onClick={() => setMode('gauge')}>Jauge</button>
+      </div>
+    </div>}
+    <div className={`gv2-psy-gauge-stage is-${mode}`}>
+      <svg viewBox={mode === 'gauge' ? '0 0 200 112' : '0 0 200 200'} role="img" aria-label={resume} key={mode}>
+        {mode === 'gauge'
+          ? <path d={arcPath(cx, cy, r, 180, 360)} className="gv2-psy-gauge-track" strokeWidth={stroke} />
+          : <circle cx={cx} cy={cy} r={r} className="gv2-psy-gauge-track" strokeWidth={stroke} />}
+        {arcs.map(({ s, i, d }) => <path key={i} d={d} pathLength="1" className="gv2-psy-gauge-seg" strokeWidth={stroke}
+          stroke={DONUT_COLORS[i % DONUT_COLORS.length]} style={{ animationDelay: `${i * 90}ms` }} />)}
+      </svg>
+      <div className="gv2-psy-gauge-center">
+        <span>Dominante · {esc(top.label)}</span>
+        <b>{topPct}<small>%</small></b>
+      </div>
+    </div>
+    <ul className="gv2-psy-donut-legend gv2-psy-gauge-legend">
       {clean.map((s, i) => <li key={i}>
         <i style={{ background: DONUT_COLORS[i % DONUT_COLORS.length] }} />
         <span>{esc(s.label)}</span>
@@ -1298,7 +1339,8 @@ function PsychoResult({ data, onReset, onGoToStratege, onGoToCreateur, partial =
 
     {/* Les quatre chiffres clés restent visibles quel que soit l'onglet. */}
     <div className="gv2-psy-stats-grid">
-      <StatChip value={meta.total_commentaires || 0} count={`${meta.commentaires_analyses || 0} qualifiés`} label="Collectés" />
+      <StatChip value={meta.total_commentaires || 0} count={`${meta.commentaires_analyses || 0} qualifiés`} label="Collectés"
+        ratio={meta.total_commentaires ? (meta.commentaires_analyses || 0) / meta.total_commentaires : 0} />
       <StatChip value={`${(pos.favorable || {}).pct || 0}%`} count={`${(pos.favorable || {}).count || 0} cmnt`} label="Favorables" tone="pos" />
       <StatChip value={`${(pos.oppose || {}).pct || 0}%`} count={`${(pos.oppose || {}).count || 0} cmnt`} label="Opposés" tone="neg" />
       <StatChip value={`${(pos.neutre || {}).pct || 0}%`} count={`${(pos.neutre || {}).count || 0} cmnt`} label="Neutres" />
@@ -1419,7 +1461,7 @@ function PsychoResult({ data, onReset, onGoToStratege, onGoToCreateur, partial =
 
       {emotions.length > 0 && <Section title="Émotions détectées">
         <div className="gv2-psy-card gv2-psy-card--plain">
-          <Donut slices={emotions.slice(0, 8).map(item => ({
+          <Donut title="Émotions exprimées" subtitle="Part des commentaires" slices={emotions.slice(0, 8).map(item => ({
             label: libelle(item.emotion), value: Math.round(item.pourcentage || item.pct || 0),
           }))} />
         </div>

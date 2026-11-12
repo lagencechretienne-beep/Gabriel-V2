@@ -1,3 +1,4 @@
+import { GlassFx } from './GlassFx.jsx';
 import React, { useEffect, useRef, useState } from 'react';
 import { Icon } from '../icons.jsx';
 import { fetchV2, isLoginResponse, readApiPayload } from '../api-client.js';
@@ -1018,19 +1019,19 @@ export function StrategeView({ workspace, onWorkspaceChange, onNavigateAgent, on
           </div>
         </div>}
 
-        {voiceCardState === 'speaking' && <div className="gv2-ariane-voice-card gv2-ariane-stream-in">
-          <div className="gv2-ariane-voice-head">
-            <span className="gv2-ariane-label gv2-ariane-voice-eyebrow--speaking">Ariane vous répond</span>
-            <Icon name="volume" size={16} />
+        {voiceCardState === 'speaking' && <GlassFx className="gv2-ariane-glass"><div className="gv2-ariane-voice-card gv2-ariane-player gv2-ariane-stream-in" role="group" aria-label="Lecture de la réponse d'Ariane">
+          <button type="button" className="gv2-ariane-player-main" onClick={speechPaused ? resumeSpeech : pauseSpeech}
+            aria-label={speechPaused ? 'Reprendre' : 'Pause'} title={speechPaused ? 'Reprendre' : 'Pause'}>
+            <Icon name={speechPaused ? 'play' : 'pause'} size={22} />
+          </button>
+          <div className="gv2-ariane-player-body">
+            <span className="gv2-ariane-player-title">Ariane vous répond</span>
+            <Waveform active={!speechPaused} bars={40} height={34} />
           </div>
-          <Waveform active={!speechPaused} minimal />
-          <div className="gv2-ariane-voice-actions">
-            <button type="button" className="gv2-ariane-voice-btn" onClick={speechPaused ? resumeSpeech : pauseSpeech}>
-              <Icon name={speechPaused ? 'play' : 'pause'} size={12} />{speechPaused ? 'Reprendre' : 'Pause'}
-            </button>
-            <button type="button" className="gv2-ariane-voice-btn" onClick={replaySpeech}><Icon name="refresh" size={12} />Réécouter</button>
-          </div>
-        </div>}
+          <button type="button" className="gv2-ariane-player-side" onClick={replaySpeech} aria-label="Réécouter" title="Réécouter">
+            <Icon name="refresh" size={18} />
+          </button>
+        </div></GlassFx>}
 
         {interviewReady && <div className="gv2-ariane-ready gv2-ariane-stream-in">
           <p>Votre situation est suffisamment claire. Ariane peut maintenant produire votre diagnostic.</p>

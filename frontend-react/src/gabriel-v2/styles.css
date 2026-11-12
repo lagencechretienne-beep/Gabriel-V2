@@ -5117,3 +5117,147 @@ html[data-gabriel-v2-theme="dark"] .gv2-creator-message--error span { background
 .gv2-psy-view .gv2-psy2-fallback-bar i { display: block; height: 100%; background: var(--psychologist-sage, #718078); transition: width .6s ease; }
 .gv2-psy-view .gv2-psy2-cta { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 24px; border: 0; border-radius: 999px; background: var(--send-bg, #1d1d1f); color: var(--send-fg, #fff); font: 500 14px/1 var(--font-family-sans); cursor: pointer; box-shadow: 0 10px 24px -12px rgba(0,0,0,.5); transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s ease; }
 .gv2-psy-view .gv2-psy2-cta:hover { transform: translateY(-1px); box-shadow: 0 14px 28px -12px rgba(0,0,0,.55); }
+
+/* ═══ Zones de saisie « verre tactile » — Ariane et Créateur ═══════════════════
+   Inspiré du composant Tactile Prompt Input : une surface translucide qui floute
+   ce qu'elle recouvre, un liseré de lumière en haut, du relief doux et une réaction
+   au focus. Réalisé en CSS (aucune dépendance, aucun WebGL), clair et sombre. */
+.gv2-strat-composer, .gv2-creator-composer {
+  --glass-bg: rgba(255,255,255,.66); --glass-edge: rgba(255,255,255,.85); --glass-line: rgba(20,22,24,.08);
+  --glass-hi: rgba(255,255,255,.95); --glass-shadow: rgba(20,22,24,.14);
+  border: 1px solid var(--glass-line); background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(22px) saturate(1.6); backdrop-filter: blur(22px) saturate(1.6);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 rgba(20,22,24,.04), 0 1px 2px rgba(20,22,24,.05), 0 18px 40px -22px var(--glass-shadow);
+  transition: border-color .25s ease, box-shadow .3s ease, transform .3s cubic-bezier(.2,.8,.2,1), background .25s ease;
+}
+.gv2-theme-dark .gv2-strat-composer, .gv2-theme-dark .gv2-creator-composer {
+  --glass-bg: rgba(255,255,255,.06); --glass-edge: rgba(255,255,255,.14); --glass-line: rgba(255,255,255,.1);
+  --glass-hi: rgba(255,255,255,.16); --glass-shadow: rgba(0,0,0,.6);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 rgba(0,0,0,.25), 0 1px 2px rgba(0,0,0,.3), 0 22px 46px -24px var(--glass-shadow);
+}
+.gv2-strat-composer { min-height: 64px; padding: 10px 10px 10px 18px; border-radius: 26px; gap: 10px; }
+.gv2-creator-composer { border-radius: 26px; }
+.gv2-strat-composer:focus-within, .gv2-creator-composer:focus-within {
+  border-color: rgba(176,138,82,.55); transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 0 0 4px rgba(176,138,82,.12), 0 22px 46px -22px var(--glass-shadow);
+}
+.gv2-strat-composer textarea { font-size: 15px; line-height: 1.55; }
+.gv2-strat-composer-hint { font-size: 13px; }
+@media (prefers-reduced-motion: reduce) { .gv2-strat-composer, .gv2-creator-composer { transition: none; } .gv2-strat-composer:focus-within, .gv2-creator-composer:focus-within { transform: none; } }
+
+/* ── Jauge / anneau de répartition (émotions, sentiments, positions) ── */
+.gv2-psy-view .gv2-psy-gauge { display: grid; gap: 28px; }
+.gv2-psy-view .gv2-psy-gauge-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.gv2-psy-view .gv2-psy-gauge-head strong { display: block; color: var(--ink); font: 500 18px/1.3 var(--font-family-display); }
+.gv2-psy-view .gv2-psy-gauge-head span { display: block; margin-top: 4px; color: var(--muted); font-size: 14px; }
+.gv2-psy-view .gv2-psy-gauge-toggle { display: inline-flex; flex: none; padding: 4px; border-radius: 999px; background: var(--soft, rgba(0,0,0,.05)); }
+.gv2-psy-view .gv2-psy-gauge-toggle button { min-height: 36px; padding: 0 18px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font: 500 14px/1 var(--font-family-sans); cursor: pointer; transition: background .25s ease, color .25s ease, box-shadow .25s ease; }
+.gv2-psy-view .gv2-psy-gauge-toggle button[aria-pressed="true"] { background: var(--surface, #fff); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.14), 0 4px 10px -6px rgba(0,0,0,.2); }
+.gv2-theme-dark .gv2-psy-view .gv2-psy-gauge-toggle button[aria-pressed="true"] { background: rgba(255,255,255,.12); box-shadow: none; }
+.gv2-psy-view .gv2-psy-gauge-stage { position: relative; width: min(100%, 420px); margin: 0 auto; }
+.gv2-psy-view .gv2-psy-gauge-stage.is-ring { width: min(100%, 300px); }
+.gv2-psy-view .gv2-psy-gauge-stage svg { display: block; width: 100%; height: auto; overflow: visible; }
+.gv2-psy-view .gv2-psy-gauge-track { fill: none; stroke: var(--line); stroke-linecap: round; opacity: .55; }
+.gv2-psy-view .gv2-psy-gauge-seg { fill: none; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: gv2-psy-seg-draw 1s cubic-bezier(.2,.7,.2,1) forwards; }
+@keyframes gv2-psy-seg-draw { to { stroke-dashoffset: 0; } }
+.gv2-psy-view .gv2-psy-gauge-center { position: absolute; left: 0; right: 0; text-align: center; pointer-events: none; }
+.gv2-psy-view .gv2-psy-gauge-stage.is-gauge .gv2-psy-gauge-center { bottom: 2%; }
+.gv2-psy-view .gv2-psy-gauge-stage.is-ring .gv2-psy-gauge-center { top: 50%; transform: translateY(-50%); }
+.gv2-psy-view .gv2-psy-gauge-center span { display: block; color: var(--muted); font-size: 14px; text-transform: capitalize; }
+.gv2-psy-view .gv2-psy-gauge-center b { display: block; margin-top: 2px; color: var(--ink); font: 500 clamp(40px, 6vw, 56px)/1 var(--font-family-display); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.gv2-psy-view .gv2-psy-gauge-center small { font-size: .5em; margin-left: 2px; color: var(--muted); letter-spacing: 0; }
+.gv2-psy-view .gv2-psy-gauge-legend { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.gv2-psy-view .gv2-psy-gauge-legend li { display: grid; grid-template-columns: 12px 1fr auto; align-items: center; gap: 16px; padding: 14px 4px; border-top: 1px solid var(--line); font-size: 16px; color: var(--ink); text-transform: capitalize; }
+.gv2-psy-view .gv2-psy-gauge-legend li:first-child { border-top: 0; }
+.gv2-psy-view .gv2-psy-gauge-legend li i { width: 12px; height: 12px; border-radius: 50%; }
+.gv2-psy-view .gv2-psy-gauge-legend .gv2-psy-donut-pct { color: var(--muted); font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) { .gv2-psy-view .gv2-psy-gauge-seg { animation: none; stroke-dashoffset: 0; } }
+
+/* ── Chiffres clés en cartes à graduations (inspiré d'un tableau de bord d'agents) ── */
+.gv2-psy-view .gv2-psy-stats-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 56px; border: 0; }
+.gv2-psy-view .gv2-psy-stat-chip { display: grid; gap: 6px; padding: 22px 24px 22px; border: 1px solid var(--line); border-right: 1px solid var(--line); border-radius: 22px; background: var(--surface); text-align: left; transition: transform .3s cubic-bezier(.2,.8,.2,1), border-color .25s ease; }
+.gv2-psy-view .gv2-psy-stat-chip:last-child { border-right: 1px solid var(--line); }
+.gv2-psy-view .gv2-psy-stat-chip:hover { transform: translateY(-2px); border-color: var(--muted); }
+.gv2-psy-view .gv2-psy-stat-chip .gv2-psy-stat-lbl { order: 0; margin: 0; color: var(--ink); font: 500 16px/1.3 var(--font-family-display); letter-spacing: 0; text-transform: none; }
+.gv2-psy-view .gv2-psy-stat-chip .gv2-psy-stat-val { order: 1; margin: 14px 0 0; color: var(--ink); font: 500 clamp(36px, 4vw, 48px)/1 var(--font-family-display); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.gv2-psy-view .gv2-psy-stat-chip .gv2-psy-stat-val.is-pos { color: #2f8a4c; }
+.gv2-psy-view .gv2-psy-stat-chip .gv2-psy-stat-val.is-neg { color: #c4453a; }
+.gv2-theme-dark .gv2-psy-view .gv2-psy-stat-chip .gv2-psy-stat-val.is-pos { color: #5fbf7d; }
+.gv2-theme-dark .gv2-psy-view .gv2-psy-stat-chip .gv2-psy-stat-val.is-neg { color: #ee7b6f; }
+.gv2-psy-view .gv2-psy-stat-chip .gv2-psy-stat-count { order: 2; margin: 0; color: var(--muted); font-size: 14px; }
+.gv2-psy-ticks { order: 3; display: flex; gap: 3px; margin-top: 14px; height: 26px; }
+.gv2-psy-ticks i { flex: 1; min-width: 2px; border-radius: 2px; background: var(--line); transform-origin: bottom; }
+.gv2-psy-ticks i.is-on { background: var(--psychologist-sage, #718078); animation: gv2-psy-tick .5s cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(var(--n) * 14ms); }
+.gv2-psy-stat-chip.is-pos .gv2-psy-ticks i.is-on { background: #2f8a4c; }
+.gv2-psy-stat-chip.is-neg .gv2-psy-ticks i.is-on { background: #c4453a; }
+.gv2-theme-dark .gv2-psy-stat-chip.is-pos .gv2-psy-ticks i.is-on { background: #5fbf7d; }
+.gv2-theme-dark .gv2-psy-stat-chip.is-neg .gv2-psy-ticks i.is-on { background: #ee7b6f; }
+@keyframes gv2-psy-tick { from { transform: scaleY(.15); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (max-width: 1000px) { .gv2-psy-view .gv2-psy-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (prefers-reduced-motion: reduce) { .gv2-psy-ticks i.is-on { animation: none; } .gv2-psy-view .gv2-psy-stat-chip { transition: none; } }
+
+/* Champ de lien : pas de rectangle de focus. Le focus se lit sur la barre entière (halo doux), pas sur le champ. */
+.gv2-psy-view .gv2-psy2-field, .gv2-psy-view .gv2-psy2-field:focus, .gv2-psy-view .gv2-psy2-field:focus-visible,
+.gv2-psy-view .mo-field, .gv2-psy-view .mo-field:focus, .gv2-psy-view .mo-field:focus-visible {
+  outline: none !important; box-shadow: none !important; border: 0 !important; border-radius: 0; background: transparent !important;
+}
+.gv2-psy-view .mo-actor:has(.mo-input:focus-within) .mo-surface { box-shadow: 0 0 0 4px color-mix(in oklab, var(--bar-fg, #1d1d1f) 8%, transparent); }
+
+/* ═══ Entretien vocal d'Ariane : lecteur « verre », noir et blanc ═══════════════
+   Inspiré d'un lecteur audio tactile. Monochrome : encre sur blanc en clair, blanc sur
+   fond sombre en sombre — aucune couleur d'accent. Surface translucide, bouton principal
+   rond et plein, onde fine, bouton secondaire discret. */
+.gv2-ariane-voice-card {
+  --pl-bg: rgba(255,255,255,.7); --pl-line: rgba(20,22,24,.09); --pl-hi: rgba(255,255,255,.95);
+  --pl-ink: #111214; --pl-on-ink: #ffffff; --pl-dim: rgba(17,18,20,.5); --pl-chip: rgba(17,18,20,.06);
+  padding: 20px 22px; border: 1px solid var(--pl-line); border-radius: 28px; background: var(--pl-bg);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5); backdrop-filter: blur(22px) saturate(1.5);
+  box-shadow: inset 0 1px 0 var(--pl-hi), 0 1px 2px rgba(20,22,24,.05), 0 24px 48px -26px rgba(20,22,24,.28);
+}
+.gv2-theme-dark .gv2-ariane-voice-card {
+  --pl-bg: rgba(255,255,255,.06); --pl-line: rgba(255,255,255,.1); --pl-hi: rgba(255,255,255,.16);
+  --pl-ink: #ffffff; --pl-on-ink: #0d0e10; --pl-dim: rgba(255,255,255,.55); --pl-chip: rgba(255,255,255,.09);
+  box-shadow: inset 0 1px 0 var(--pl-hi), 0 24px 52px -28px rgba(0,0,0,.7);
+}
+.gv2-ariane-player { display: flex; align-items: center; gap: 20px; }
+.gv2-ariane-player-main { flex: none; display: grid; place-items: center; width: 60px; height: 60px; border: 0; border-radius: 50%; background: var(--pl-ink); color: var(--pl-on-ink); cursor: pointer; box-shadow: 0 12px 26px -12px rgba(0,0,0,.55); transition: transform .28s cubic-bezier(.2,.8,.2,1), box-shadow .28s ease; }
+.gv2-ariane-player-main:hover { transform: scale(1.05); box-shadow: 0 16px 30px -12px rgba(0,0,0,.6); }
+.gv2-ariane-player-main:active { transform: scale(.97); }
+.gv2-ariane-player-body { flex: 1; min-width: 0; display: grid; gap: 8px; }
+.gv2-ariane-player-title { color: var(--pl-ink); font: 500 15px/1.3 var(--font-family-display); letter-spacing: -.005em; }
+.gv2-ariane-player .gv2-ariane-waveform { margin-top: 0; gap: 3px; }
+.gv2-ariane-player .gv2-ariane-waveform span { width: 3px; background: var(--pl-ink); }
+.gv2-ariane-player-side { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--pl-chip); color: var(--pl-ink); cursor: pointer; transition: background .2s ease, transform .25s ease; }
+.gv2-ariane-player-side:hover { background: color-mix(in oklab, var(--pl-ink) 14%, transparent); transform: rotate(-30deg); }
+/* Écoute (dictée) : même peau, mêmes boutons */
+.gv2-ariane-voice-card .gv2-ariane-voice-eyebrow--speaking, .gv2-ariane-voice-head > span:first-child { color: var(--pl-dim); }
+.gv2-ariane-voice-card .gv2-ariane-voice-btn { min-height: 40px; padding: 0 20px; border: 0; border-radius: 999px; background: var(--pl-chip); color: var(--pl-ink); font-size: 14px; font-weight: 500; transition: background .2s ease, transform .25s ease; }
+.gv2-ariane-voice-card .gv2-ariane-voice-btn:hover { background: color-mix(in oklab, var(--pl-ink) 14%, transparent); color: var(--pl-ink); }
+.gv2-ariane-voice-card .gv2-ariane-voice-btn--primary { background: var(--pl-ink); color: var(--pl-on-ink); }
+.gv2-ariane-voice-card .gv2-ariane-voice-btn--primary:hover { background: var(--pl-ink); color: var(--pl-on-ink); opacity: .9; transform: translateY(-1px); }
+.gv2-ariane-voice-card .gv2-ariane-waveform span { background: var(--pl-ink); }
+.gv2-ariane-voice-card.is-error { border-color: var(--pl-line); }
+@media (prefers-reduced-motion: reduce) { .gv2-ariane-player-main, .gv2-ariane-player-side { transition: none; } }
+
+/* Verre optique actif : la surface est rendue par le moteur, on retire fond, cadre et ombre CSS du lecteur. */
+.gv2-glassfx { width: 100%; }
+.gv2-glassfx.is-webgl .gv2-ariane-voice-card { background: transparent; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.gv2-ariane-glass { margin-top: 4px; }
+
+/* Lecteur vocal dans une barre d'actions : il prend toute la largeur, sur sa propre ligne, au-dessus des boutons. */
+.gv2-listen-player-row { flex: 0 0 100%; width: 100%; order: -1; margin: 0 0 14px; }
+.gv2-creator-result-actions { flex-wrap: wrap; }
+.gv2-creator-result-actions .gv2-creator-listen { display: inline-flex; align-items: center; gap: 6px; }
+/* Les boutons du lecteur ne doivent pas hériter du style des petites actions de la barre. */
+.gv2-creator-result-actions .gv2-listen-player-row button.gv2-ariane-player-main,
+.gv2-creator-result-actions .gv2-listen-player-row button.gv2-ariane-player-main:hover:not(:disabled) {
+  display: grid; place-items: center; width: 60px; height: 60px; min-height: 60px; padding: 0; border: 0; border-radius: 50%;
+  background: var(--pl-ink); color: var(--pl-on-ink); opacity: 1; gap: 0;
+}
+.gv2-creator-result-actions .gv2-listen-player-row button.gv2-ariane-player-main:disabled { opacity: .7; }
+.gv2-creator-result-actions .gv2-listen-player-row button.gv2-ariane-player-side,
+.gv2-creator-result-actions .gv2-listen-player-row button.gv2-ariane-player-side:hover:not(:disabled) {
+  display: grid; place-items: center; width: 44px; height: 44px; min-height: 44px; padding: 0; border: 0; border-radius: 50%;
+  background: var(--pl-chip); color: var(--pl-ink); gap: 0;
+}
+.gv2-creator-result-actions .gv2-listen-player-row { justify-content: stretch; }
