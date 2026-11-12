@@ -33,7 +33,13 @@ os.makedirs(_PROFILES_DIR, exist_ok=True)
 # ─── Mémoire Utilisateur ──────────────────────────────────────────────────────
 
 def get_user_profile(uid):
-    """Charge le brain_profile de l'utilisateur courant (per-user)."""
+    """Charge le brain_profile de l'utilisateur courant — le sien, et rien d'autre.
+
+    Constaté le 12/11/2026 : un compte tout neuf recevait le profil business d'un AUTRE utilisateur, parce que
+    l'ancien fichier commun (brain_profile.json) servait de repli et était réécrit à chaque enregistrement par
+    n'importe qui. L'offre, la cible et les objectifs d'une personne devenaient ceux de la suivante, et la stratégie
+    d'Ariane était générée sur le business d'autrui. Un utilisateur identifié n'a donc plus de repli : sans profil à
+    lui, il n'en a pas. Le fichier commun ne sert plus que sans identité (développement anonyme)."""
     if uid:
         path = os.path.join(_PROFILES_DIR, f"{uid}.json")
         if os.path.exists(path):
@@ -42,7 +48,7 @@ def get_user_profile(uid):
                     return json.load(f)
             except Exception:
                 pass
-    # Fallback legacy (dev / migration)
+        return {}
     if os.path.exists(_BRAIN_FILE):
         try:
             with open(_BRAIN_FILE, 'r', encoding='utf-8') as f:
@@ -53,12 +59,12 @@ def get_user_profile(uid):
 
 
 def save_user_profile(uid, data):
-    """Sauvegarde le brain_profile par utilisateur."""
+    """Sauvegarde le brain_profile par utilisateur. Jamais dans le fichier commun pour un utilisateur identifié."""
     if uid:
         path = os.path.join(_PROFILES_DIR, f"{uid}.json")
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-    # Garder le fichier legacy à jour (pour dev / fallback)
+        return
     with open(_BRAIN_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 

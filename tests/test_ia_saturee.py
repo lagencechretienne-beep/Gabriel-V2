@@ -52,3 +52,24 @@ def test_message_utilisateur_ia_saturee():
     assert "sollicité" in msg and "Aucun crédit" in msg
     assert application._llm_message(_Sature(500), "Erreur générique") == "Erreur générique"
     assert application._llm_message(ValueError("x"), "Erreur générique") == "Erreur générique"
+
+
+def test_une_erreur_serveur_passagere_du_fournisseur_est_reessayee(monkeypatch):
+    """12/11/2026 : « 500 Service unavailable » de Mistral → l'analyse échouait sans nouvel essai."""
+    monkeypatch.setattr(llm.time, 'sleep', lambda s: None)
+    for statut in (500, 502, 503, 504):
+        p, appels = _fournisseur(2, statut=statut)
+        assert llm.complete("d", provider=p, throttled=False, retry=llm.RETRY_SIMPLE).text == "ok"
+        assert len(appels) == 3, statut
+
+
+def test_une_erreur_de_requete_n_est_toujours_pas_reessayee(monkeypatch):
+    monkeypatch.setattr(llm.time, 'sleep', lambda s: None)
+    for statut in (400, 401, 403, 404):
+        p, appels = _fournisseur(10, statut=statut)
+        try:
+            llm.complete("d", provider=p, throttled=False, retry=llm.RETRY_SIMPLE)
+            assert False
+        except _Sature:
+            pass
+        assert len(appels) == 1, statut

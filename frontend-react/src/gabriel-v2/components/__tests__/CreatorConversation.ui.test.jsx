@@ -342,3 +342,23 @@ describe('Générations longues : attente, reprise et relance', () => {
     expect(screen.getByRole('button', { name: /Relancer la création/ })).toBeInTheDocument();
   });
 });
+
+describe('Suggestions de départ : le format suit la suggestion', () => {
+  // Constaté le 12/11/2026 : « Séquence email » remplissait le texte mais laissait le format sur « Script » —
+  // Gabriel a rendu un script vidéo (« [Hook — 0-3] ») à la place de la séquence d'emails demandée.
+  it.each([
+    ['Post LinkedIn', 'linkedin'],
+    ['Vidéo courte', 'script'],
+    ['Séquence email', 'email'],
+  ])('« %s » choisit le format %s en même temps que le texte', async (libelle, format) => {
+    const props = renderCreator();
+    await userEvent.click(screen.getByRole('button', { name: new RegExp(libelle) }));
+    expect(props.onSettingsChange).toHaveBeenCalledWith({ contentType: format });
+    expect(screen.getByRole('textbox')).not.toHaveValue('');
+  });
+
+  it('propose aussi le format Email parmi les onglets de format', () => {
+    renderCreator();
+    expect(screen.getByRole('tab', { name: 'Email' })).toBeInTheDocument();
+  });
+});

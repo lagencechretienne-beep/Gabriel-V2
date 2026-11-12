@@ -107,7 +107,10 @@ class RetryPolicy:
     max_delay: float = 16.0
     exponential: bool = False
     jitter: bool = False
-    retry_on_status: tuple = (429, 529)
+    # 429/529 : fournisseur saturé. 500/502/503/504 : erreur serveur passagère — constaté le 12/11/2026 : un « 500 Service
+    # unavailable » de Mistral faisait échouer l'analyse d'un nouvel utilisateur alors que le service répondait de
+    # nouveau quelques secondes après. Une requête refusée n'est pas facturée : réessayer ne coûte rien.
+    retry_on_status: tuple = (429, 529, 500, 502, 503, 504)
 
     def delay_for(self, attempt: int) -> float:
         if self.exponential:

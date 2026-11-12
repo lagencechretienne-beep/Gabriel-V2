@@ -1,3 +1,4 @@
+import { lireDate } from '../dates.js';
 import React, { useEffect, useMemo, useState } from 'react';
 import { GabrielMark, Icon } from '../icons.jsx';
 import { workspaceInitial } from '../data-adapters.js';
@@ -112,8 +113,8 @@ function useAnalyses() {
 }
 
 function dateCourte(iso) {
-  const d = iso ? new Date(iso) : null;
-  if (!d || Number.isNaN(d.getTime())) return '';
+  const d = lireDate(iso);
+  if (!d) return '';
   return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 }
 
@@ -200,7 +201,8 @@ const RESULTAT_LABEL = {
 function fmtDateStrategie(iso) {
   if (!iso) return '';
   try {
-    const d = new Date(iso);
+    const d = lireDate(iso);
+    if (!d) return '';
     return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
   } catch (_) { return ''; }
 }

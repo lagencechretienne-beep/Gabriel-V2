@@ -5,9 +5,9 @@ import { agents } from '../agent-registry.js';
 import { fetchV2, isLoginResponse, readApiPayload } from '../api-client.js';
 
 const prompts = [
-  { label: 'Post LinkedIn', text: 'Écris un post LinkedIn expert avec une conclusion actionnable autour de mon offre principale.' },
-  { label: 'Vidéo courte', text: 'Écris un script vidéo court qui traite l’objection principale de mon audience.' },
-  { label: 'Séquence email', text: 'Rédige une séquence email qui transforme l’intérêt en prise de rendez-vous.' },
+  { label: 'Post LinkedIn', format: 'linkedin', text: 'Écris un post LinkedIn expert avec une conclusion actionnable autour de mon offre principale.' },
+  { label: 'Vidéo courte', format: 'script', text: 'Écris un script vidéo court qui traite l’objection principale de mon audience.' },
+  { label: 'Séquence email', format: 'email', text: 'Rédige une séquence email qui transforme l’intérêt en prise de rendez-vous.' },
 ];
 
 const formatLabels = {
@@ -18,6 +18,7 @@ const creatorFormatTabs = [
   { value: 'linkedin', label: 'Post' },
   { value: 'script', label: 'Script' },
   { value: 'post', label: 'Thread' },
+  { value: 'email', label: 'Email' },
 ];
 
 function makeMessage(role, kind, payload = {}) {
@@ -612,7 +613,7 @@ export function CreatorConversation({ workspace, lastAnalysis, creatorHandoff, s
     <div className="gv2-creator-stream" ref={scrollRef}>
       <div className="gv2-creator-thread">
         {messages.map(message => <Message key={message.id} message={message} contentType={settings.contentType} onCopy={copy} onSave={save} onDownload={download} onPrepareRefinement={prepareRefinement} onRetry={retryCreation} onRegenerate={() => prepareRefinement('Génère une nouvelle version avec un angle différent, en conservant l’objectif initial.')} saving={saving} saved={saved} copied={copiedResultId === message.id} />)}
-        {!result && suggestionsVisible && <section className="gv2-creator-suggestions"><div><span>Points de départ</span><button type="button" onClick={() => setSuggestionsVisible(false)}>Masquer</button></div><p>Choisissez un format ou décrivez directement le résultat attendu.</p><div className="gv2-creator-suggestion-list">{prompts.map(prompt => <button key={prompt.label} type="button" onClick={() => { setInput(prompt.text); inputRef.current?.focus(); }}><strong>{prompt.label}</strong><Icon name="chevronRight" size={15} /></button>)}</div></section>}
+        {!result && suggestionsVisible && <section className="gv2-creator-suggestions"><div><span>Points de départ</span><button type="button" onClick={() => setSuggestionsVisible(false)}>Masquer</button></div><p>Choisissez un format ou décrivez directement le résultat attendu.</p><div className="gv2-creator-suggestion-list">{prompts.map(prompt => <button key={prompt.label} type="button" onClick={() => { onSettingsChange?.({ contentType: prompt.format }); setInput(prompt.text); inputRef.current?.focus(); }}><strong>{prompt.label}</strong><Icon name="chevronRight" size={15} /></button>)}</div></section>}
       </div>
     </div>
     <footer className="gv2-creator-composer-dock">

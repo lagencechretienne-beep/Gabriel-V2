@@ -1,3 +1,4 @@
+import { lireDate } from '../dates.js';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../icons.jsx';
 import { fetchV2, isLoginResponse, readApiPayload } from '../api-client.js';
@@ -350,8 +351,8 @@ const INTENTIONS = [
 ];
 
 function dateCourte(iso) {
-  const d = iso ? new Date(iso) : null;
-  if (!d || Number.isNaN(d.getTime())) return '';
+  const d = lireDate(iso);
+  if (!d) return '';
   return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 }
 
