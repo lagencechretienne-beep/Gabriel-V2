@@ -3514,8 +3514,8 @@ body.page-stratege:not(.strategy-studio-preview) .strat-layout.has-strategy .cha
     <!-- Étape 1 du parcours — accueil. On nomme le moment avant de demander
          quoi que ce soit. -->
     <div class="interview-gate hidden" id="gate-welcome">
-      <div class="gate-eyebrow">Ariane · Le Stratège</div>
-      <h1 class="gate-title">Bonjour, je suis Ariane, votre stratège.</h1>
+      <div class="gate-eyebrow">Le Stratège</div>
+      <h1 class="gate-title">Bonjour, je suis le Stratège de Gabriel.</h1>
       <div class="gate-sub">Ensemble, transformons vos ambitions et vos enjeux en une stratégie claire, solide et prête à être déployée.</div>
       <button type="button" class="gate-next" onclick="StrategyWorkspace.goTo('interview')">
         Commencer l’entretien stratégique
@@ -3611,7 +3611,7 @@ body.page-stratege:not(.strategy-studio-preview) .strat-layout.has-strategy .cha
           </button>
         </div>
       </div>
-      <div class="chat-messages" id="chat-messages" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Conversation avec Ariane"></div>
+      <div class="chat-messages" id="chat-messages" role="log" aria-live="polite" aria-relevant="additions text" aria-label="Conversation avec le Stratège"></div>
     </div>
 
     <!-- Barre de saisie — élément PERMANENT, hors de la conversation.
@@ -3627,7 +3627,7 @@ body.page-stratege:not(.strategy-studio-preview) .strat-layout.has-strategy .cha
       <a class="compose-add" href="/dossiers" title="Créer ou reprendre un dossier" aria-label="Créer ou reprendre un dossier">
         <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </a>
-      <div class="composer-agent-label" aria-hidden="true">Ariane 1.0 · Stratège</div>
+      <div class="composer-agent-label" aria-hidden="true">Le Stratège 1.0</div>
       <textarea class="chat-input" id="chat-input" placeholder="Écrivez votre réponse ou utilisez le micro…" rows="1"
         onkeydown="handleKey(event)" oninput="autoResize(this)" aria-label="Votre réponse à Gabriel"></textarea>
       <button type="button" class="review-restart-btn" id="review-restart-btn" onclick="restartTranscript()">Recommencer</button>
@@ -3646,7 +3646,7 @@ body.page-stratege:not(.strategy-studio-preview) .strat-layout.has-strategy .cha
       <div class="interview-side-agent">
         <img src="{{ static_v('images/personas/p2.jpeg') }}" alt="" style="object-position:center 28%;">
         <div>
-          <strong>Ariane</strong>
+          <strong>Le Stratège</strong>
           <span>Décision et positionnement</span>
         </div>
       </div>
@@ -3722,7 +3722,7 @@ body.page-stratege:not(.strategy-studio-preview) .strat-layout.has-strategy .cha
       <div class="loading-overlay active" style="position:relative;min-height:300px;background:transparent;">
         <div class="loading-spinner"></div>
         <div class="loading-percent" id="strat-percent">0%</div>
-        <div class="loading-title">Ariane élabore votre stratégie…</div>
+        <div class="loading-title">Le Stratège élabore votre stratégie…</div>
         <div class="loading-steps">
           <div class="loading-step active"><div class="loading-step-dot"></div>Lecture du contexte business</div>
           <div class="loading-step" id="sl2"><div class="loading-step-dot"></div>Analyse des insights audience</div>

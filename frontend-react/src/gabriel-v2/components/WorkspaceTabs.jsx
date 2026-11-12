@@ -6,7 +6,7 @@ import { agents } from '../agent-registry.js';
 // prolongements (stratégie, contenu), puis la conversation et le suivi.
 const tabs = [
   { id: 'psychologue', label: 'Psychologue', agent: agents.psychologue, group: 'entree' },
-  { id: 'stratege', label: 'Ariane', agent: agents.stratege, group: 'prolongements' },
+  { id: 'stratege', label: 'Stratège', agent: agents.stratege, group: 'prolongements' },
   { id: 'createur', label: 'Créateur', agent: agents.createur, group: 'prolongements' },
   { id: 'conversation', label: 'Conversation', icon: 'message', group: 'suivi' },
   { id: 'activity', label: 'Activité', icon: 'activity', group: 'suivi' },

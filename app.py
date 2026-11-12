@@ -2445,7 +2445,7 @@ def creator_generate():
     if data.get('use_strategy') is True and not strategy:
         return jsonify({
             'error': 'strategy_context_mismatch',
-            'message': "La stratégie d’Ariane n’est pas liée à ce dossier. Rechargez le dossier avant de générer.",
+            'message': "La stratégie n’est pas liée à ce dossier. Rechargez le dossier avant de générer.",
         }), 409
 
     # Le persona utilisé doit être l'objet exact généré par le Psychologue pour

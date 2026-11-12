@@ -80,7 +80,7 @@ describe('Menu en tiroir sur téléphone', () => {
     render(<AppShell bootstrap={bootstrap} />);
     const barre = await screen.findByRole('navigation', { name: 'Sections de l’espace de travail' });
     expect(barre).toHaveTextContent('Psychologue');
-    expect(barre).toHaveTextContent('Ariane');
+    expect(barre).toHaveTextContent('Stratège');
     expect(barre).toHaveTextContent('Créateur');
   });
 });

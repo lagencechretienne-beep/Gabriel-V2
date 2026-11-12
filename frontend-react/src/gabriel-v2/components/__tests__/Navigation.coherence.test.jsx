@@ -39,7 +39,7 @@ describe('Menu latéral', () => {
     const libelles = screen.getAllByText(/PORTE D’ENTRÉE|PROLONGEMENTS/).map(n => n.textContent);
     expect(libelles).toEqual(['PORTE D’ENTRÉE', 'PROLONGEMENTS']);
     const noms = [...document.querySelectorAll('.gv2-agent-nav-row strong')].map(n => n.textContent);
-    expect(noms).toEqual(['Psychologue', 'Ariane', 'Créateur']);
+    expect(noms).toEqual(['Psychologue', 'Stratège', 'Créateur']);
   });
 
   it('ouvre les espaces quand un ancien lien demande la section retirée', () => {
@@ -55,7 +55,7 @@ describe('Onglets', () => {
     render(<WorkspaceTabs currentTab="psychologue" onChange={onChange} />);
     const nav = screen.getByRole('navigation');
     const suite = [...nav.children].map(el => el.classList.contains('gv2-tabs-divider') ? '|' : el.textContent);
-    expect(suite).toEqual(['Psychologue', '|', 'Ariane', 'Créateur', '|', 'Conversation', 'Activité', 'Mémoire']);
+    expect(suite).toEqual(['Psychologue', '|', 'Stratège', 'Créateur', '|', 'Conversation', 'Activité', 'Mémoire']);
     expect(within(nav).queryByRole('button', { name: 'Prospect' })).toBeNull();
   });
 });
@@ -75,8 +75,8 @@ describe('Menu : architecture multi-agents', () => {
     const rail = screen.getByRole('navigation', { name: 'Navigation globale' });
     await user.click(within(rail).getByRole('button', { name: 'Accueil' }));
     const noms = [...document.querySelectorAll('.gv2-agent-nav-row strong')].map(n => n.textContent);
-    expect(noms).toEqual(['PsychologuePrincipal', 'Ariane', 'Créateur']);
-    await user.click(screen.getByRole('button', { name: /Ariane/ }));
+    expect(noms).toEqual(['PsychologuePrincipal', 'Stratège', 'Créateur']);
+    await user.click(screen.getByRole('button', { name: /Stratège/ }));
     expect(onSelectAgent).toHaveBeenCalledWith('stratege');
   });
 

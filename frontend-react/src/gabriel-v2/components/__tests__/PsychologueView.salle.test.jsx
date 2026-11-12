@@ -125,7 +125,7 @@ describe('Salle Cross', () => {
     const onNavigateAgent = vi.fn();
     const user = ouvrir({ onNavigateAgent });
     await user.click(await screen.findByRole('tab', { name: 'Sujets & angles' }));
-    await user.click(screen.getByRole('button', { name: /Construire la stratégie · Ariane/ }));
+    await user.click(screen.getByRole('button', { name: /Construire la stratégie · Le Stratège/ }));
 
     const passage = JSON.parse(window.sessionStorage.getItem('gabriel_for_stratege'));
     expect(passage.analysis_id).toBe(CROSS.cross_analysis_id);       // pas l'analyse d'une seule audience

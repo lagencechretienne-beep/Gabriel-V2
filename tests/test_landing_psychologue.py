@@ -42,10 +42,21 @@ def test_landing_names_gabriel_ai_as_a_multi_agent_system_led_by_the_psychologue
 def test_landing_leads_to_the_psychologue_and_keeps_the_other_agents():
     html = _page()
     assert 'href="/login"' in html
-    assert "Ariane, la stratège" in html and "Le Créateur" in html
+    assert "Le Stratège" in html and "Le Créateur" in html
 
 
 def test_previous_landing_stays_reachable():
     r = _app.app.test_client().get('/landing-classique')
     assert r.status_code == 200
     assert "Prenez la bonne décision" in r.get_data(as_text=True)
+
+
+def test_l_agent_strategique_ne_s_appelle_plus_ariane_a_l_ecran():
+    """12/11/2026 : l'agent s'appelle « Le Stratège » partout à l'écran (le « fil d'Ariane » du fil de navigation est un autre mot)."""
+    import re
+    html = _html() if '_html' in globals() else None
+    if html is None:
+        from app import app
+        html = app.test_client().get('/').get_data(as_text=True)
+    visible = re.sub(r'<(script|style)[^>]*>.*?</\1>', '', html, flags=re.S)
+    assert 'Ariane' not in re.sub(r"<[^>]+>", ' ', visible)

@@ -326,7 +326,7 @@ function PsychoInput({
 
     {onNavigateAgent && <section className="gv2-psy-extensions" aria-label="Prolonger l’analyse">
       <span className="gv2-psy-mono-label">Après la lecture</span>
-      <button type="button" onClick={() => onNavigateAgent('stratege')}><strong>Transformer en stratégie</strong><span>Ariane, stratège</span><span aria-hidden="true">→</span></button>
+      <button type="button" onClick={() => onNavigateAgent('stratege')}><strong>Transformer en stratégie</strong><span>Le Stratège</span><span aria-hidden="true">→</span></button>
       <button type="button" onClick={() => onNavigateAgent('createur')}><strong>Transformer en contenu</strong><span>Le Créateur</span><span aria-hidden="true">→</span></button>
     </section>}
   </section>;
@@ -2255,7 +2255,7 @@ function PsychoCrossResult({ data, onReset, onNavigateAgent, onStrategeCross, on
         <span className="gv2-psy-next-hint">Transformer cette lecture croisée</span>
         <div className="gv2-psy-next-actions">
           <button type="button" className="gv2-psy-ghost-btn" onClick={() => onNavigateAgent('createur')}>Un message commun · Créateur →</button>
-          <button type="button" className="gv2-psy-primary-btn" onClick={() => onStrategeCross ? onStrategeCross(data) : onNavigateAgent('stratege')}>Construire la stratégie · Ariane →</button>
+          <button type="button" className="gv2-psy-primary-btn" onClick={() => onStrategeCross ? onStrategeCross(data) : onNavigateAgent('stratege')}>Construire la stratégie · Le Stratège →</button>
         </div>
       </div>}
     </div>}

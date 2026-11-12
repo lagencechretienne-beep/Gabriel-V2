@@ -6,7 +6,7 @@ import { agents } from '../agent-registry.js';
 import { fetchV2, isLoginResponse, readApiPayload } from '../api-client.js';
 
 /* Le rail range ce que l'on possède (espaces, sources, agents, stratégies).
-   Là où l'on travaille — Psychologue, Ariane, Créateur, Conversation,
+   Là où l'on travaille — Psychologue, le Stratège, Créateur, Conversation,
    Activité, Mémoire — reste dans les onglets du haut : aucun doublon. */
 const railItems = [
   { id: 'home', icon: 'home', label: 'Accueil' },
@@ -283,7 +283,7 @@ function StrategiesPanel() {
     return <div className="gv2-nav-content">
       <section className="gv2-nav-note">
         <span className="gv2-nav-note-mark"><Icon name="archive" size={16} /></span>
-        <div><strong>Aucune stratégie sauvegardée</strong><p>Chaque stratégie générée par Ariane est conservée ici. Vous pourrez suivre si elle a fonctionné sur le terrain.</p></div>
+        <div><strong>Aucune stratégie sauvegardée</strong><p>Chaque stratégie générée par le Stratège est conservée ici. Vous pourrez suivre si elle a fonctionné sur le terrain.</p></div>
       </section>
     </div>;
   }

@@ -211,7 +211,7 @@ function CreationSources({ sources, result }) {
     </p>}
     {sources && <div className="gv2-cdoc-source-list">
       <span className={sources.use_psycho ? 'is-on' : ''}>{sources.use_psycho ? 'Analyse du Psychologue utilisée' : 'Sans analyse du Psychologue'}</span>
-      <span className={sources.use_strategy ? 'is-on' : ''}>{sources.use_strategy ? 'Stratégie d’Ariane utilisée' : 'Sans stratégie d’Ariane'}</span>
+      <span className={sources.use_strategy ? 'is-on' : ''}>{sources.use_strategy ? 'Stratégie utilisée' : 'Sans stratégie'}</span>
     </div>}
     {scores.length > 0 && <div className="gv2-cdoc-scores" aria-label="Relecture de Gabriel">
       {scores.map(([key, value]) => <span key={key}><em>{cdocLabel(key)}</em><strong>{Math.round(value)}</strong></span>)}
@@ -633,9 +633,9 @@ export function CreatorConversation({ workspace, lastAnalysis, creatorHandoff, s
         </button>
         <button type="button" className={`gv2-creator-source${useStrategy && strategyAvailable ? ' is-on' : ''}`} aria-pressed={Boolean(useStrategy && strategyAvailable)}
           disabled={!strategyAvailable} onClick={() => setUseStrategy(value => !value)}
-          title={strategyAvailable ? 'Appuyer la création sur la stratégie d’Ariane' : 'Aucune stratégie d’Ariane dans cet espace'}>
+          title={strategyAvailable ? 'Appuyer la création sur la stratégie' : 'Aucune stratégie dans cet espace'}>
           <img src={agents.stratege.portrait} alt="" />
-          <span><strong>Stratégie d’Ariane</strong><small>{strategyAvailable ? (useStrategy ? (strategyActivatedByAriane ? 'Activée depuis Ariane' : 'Utilisée') : 'Optionnelle') : 'Aucune stratégie'}</small></span>
+          <span><strong>Stratégie</strong><small>{strategyAvailable ? (useStrategy ? (strategyActivatedByAriane ? 'Activée depuis le Stratège' : 'Utilisée') : 'Optionnelle') : 'Aucune stratégie'}</small></span>
           <i aria-hidden="true" />
         </button>
       </div>

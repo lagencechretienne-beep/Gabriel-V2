@@ -428,9 +428,9 @@ function Report({ strategy, onGoToCreateur, onRestart }) {
       <article className="gv2-ariane-report-article">
         <header className="gv2-ariane-report-header">
           <div>
-            <span className="gv2-ariane-label" style={{ color: 'var(--muted)' }}>Ariane · Restitution</span>
+            <span className="gv2-ariane-label" style={{ color: 'var(--muted)' }}>Le Stratège · Restitution</span>
             <h1>Votre stratégie</h1>
-            <p>Diagnostic établi à partir de l'entretien stratégique conduit par Ariane.</p>
+            <p>Diagnostic établi à partir de l'entretien stratégique conduit par le Stratège.</p>
           </div>
           <div className="gv2-ariane-report-actions">
             <button type="button" onClick={() => downloadReport(strategy)}><Icon name="download" size={14} />Télécharger</button>
@@ -476,7 +476,7 @@ function lireHandoffPsycho(activeFolderId) {
 
 function ChatMessage({ role, content, observation, hero }) {
   const isUser = role === 'user';
-  const author = isUser ? 'Vous' : 'Ariane';
+  const author = isUser ? 'Vous' : 'Le Stratège';
   if (hero) {
     return <div className="gv2-ariane-hero gv2-ariane-stream-in"><h1>{esc(content)}</h1></div>;
   }
@@ -932,7 +932,7 @@ export function StrategeView({ workspace, onWorkspaceChange, onNavigateAgent, on
 
   if (stage === 'need_analysis') {
     return <div className="gv2-strat-empty is-calm">
-      <span className="gv2-strat-empty-eyebrow">Ariane · Stratégie</span>
+      <span className="gv2-strat-empty-eyebrow">Le Stratège</span>
       <h2>Une analyse est disponible pour ce dossier</h2>
       <p>Gabriel peut générer une stratégie à partir de l'analyse d'audience déjà réalisée et de votre profil business.</p>
       <div className="gv2-strat-empty-actions">
@@ -944,7 +944,7 @@ export function StrategeView({ workspace, onWorkspaceChange, onNavigateAgent, on
 
   if (stage === 'need_profile') {
     return <div className="gv2-strat-empty is-calm">
-      <span className="gv2-strat-empty-eyebrow">Ariane · Stratégie</span>
+      <span className="gv2-strat-empty-eyebrow">Le Stratège</span>
       <h2>Votre profil business est incomplet</h2>
       <p>Gabriel a besoin de ces informations pour générer une stratégie fiable :</p>
       <ul className="gv2-strat-missing">{(missingFields || []).map(f => <li key={f.field}>{f.label}</li>)}</ul>
@@ -963,7 +963,7 @@ export function StrategeView({ workspace, onWorkspaceChange, onNavigateAgent, on
         {[60, 120, 180].map(x => <circle key={x} cx={x} cy="30" r="2" fill="var(--strategist-slate)" />)}
         <circle cx="4" cy="30" r="3" fill="var(--ink)" />
       </svg>
-      <h2>Ariane structure votre stratégie</h2>
+      <h2>Le Stratège structure votre stratégie</h2>
       <p key={phase} className="gv2-ariane-label gv2-ariane-generating-phase gv2-ariane-stream-in" aria-live="polite">
         {phase}<span className="gv2-ariane-caret">_</span>
       </p>
@@ -985,10 +985,10 @@ export function StrategeView({ workspace, onWorkspaceChange, onNavigateAgent, on
     const voiceCardState = isRecording ? 'listening' : voiceError ? 'error' : speaking ? 'speaking' : null;
     return <div className={`gv2-strat-interview${hasUserReply ? ' has-replies' : ' is-opening'}`}>
       {psychoHandoff && <div className="gv2-strat-banner">Analyse Psychologue détectée — elle sera prise en compte dans la stratégie.</div>}
-      <div className="gv2-strat-chat" role="log" aria-live="polite" aria-label="Conversation avec Ariane">
+      <div className="gv2-strat-chat" role="log" aria-live="polite" aria-label="Conversation avec le Stratège">
         {messages.map((m, i) => <ChatMessage key={i} role={m.role} content={m.content} observation={m.observation || m.strategic_observation}
           hero={!hasUserReply && i === 0 && m.role !== 'user'} />)}
-        {sending && <article className="gv2-strat-msg gv2-strat-msg--assistant is-thinking"><span>Ariane structure votre réponse…</span></article>}
+        {sending && <article className="gv2-strat-msg gv2-strat-msg--assistant is-thinking"><span>Le Stratège structure votre réponse…</span></article>}
 
         {!hasUserReply && dicteeDisponible && !voiceCardState && <div className="gv2-ariane-hero-actions">
           <button type="button" className="gv2-ariane-hero-cta" onClick={toggleDictation}>Commencer l'entretien à la voix</button>
@@ -996,7 +996,7 @@ export function StrategeView({ workspace, onWorkspaceChange, onNavigateAgent, on
 
         {voiceCardState === 'listening' && <div className="gv2-ariane-voice-card gv2-ariane-stream-in">
           <div className="gv2-ariane-voice-head">
-            <span className="gv2-ariane-label" style={{ color: 'var(--strategist-slate)' }}>Ariane · Écoute</span>
+            <span className="gv2-ariane-label" style={{ color: 'var(--strategist-slate)' }}>Le Stratège · Écoute</span>
             <span className="gv2-ariane-voice-timer">{formatTimer(recordingSeconds)}</span>
           </div>
           <Waveform active />
@@ -1011,7 +1011,7 @@ export function StrategeView({ workspace, onWorkspaceChange, onNavigateAgent, on
         </div>}
 
         {voiceCardState === 'error' && <div className="gv2-ariane-voice-card is-error gv2-ariane-stream-in">
-          <span className="gv2-ariane-label gv2-ariane-voice-eyebrow--error">Ariane · Micro indisponible</span>
+          <span className="gv2-ariane-label gv2-ariane-voice-eyebrow--error">Le Stratège · Micro indisponible</span>
           <p className="gv2-ariane-voice-transcript" style={{ marginTop: 10 }}>{voiceError}</p>
           <div className="gv2-ariane-voice-actions">
             <button type="button" className="gv2-ariane-voice-btn" onClick={toggleDictation}>Réessayer le micro</button>
@@ -1019,13 +1019,13 @@ export function StrategeView({ workspace, onWorkspaceChange, onNavigateAgent, on
           </div>
         </div>}
 
-        {voiceCardState === 'speaking' && <GlassFx className="gv2-ariane-glass"><div className="gv2-ariane-voice-card gv2-ariane-player gv2-ariane-stream-in" role="group" aria-label="Lecture de la réponse d'Ariane">
+        {voiceCardState === 'speaking' && <GlassFx className="gv2-ariane-glass"><div className="gv2-ariane-voice-card gv2-ariane-player gv2-ariane-stream-in" role="group" aria-label="Lecture de la réponse du Stratège">
           <button type="button" className="gv2-ariane-player-main" onClick={speechPaused ? resumeSpeech : pauseSpeech}
             aria-label={speechPaused ? 'Reprendre' : 'Pause'} title={speechPaused ? 'Reprendre' : 'Pause'}>
             <Icon name={speechPaused ? 'play' : 'pause'} size={22} />
           </button>
           <div className="gv2-ariane-player-body">
-            <span className="gv2-ariane-player-title">Ariane vous répond</span>
+            <span className="gv2-ariane-player-title">Le Stratège vous répond</span>
             <Waveform active={!speechPaused} bars={40} height={34} />
           </div>
           <button type="button" className="gv2-ariane-player-side" onClick={replaySpeech} aria-label="Réécouter" title="Réécouter">
@@ -1034,7 +1034,7 @@ export function StrategeView({ workspace, onWorkspaceChange, onNavigateAgent, on
         </div></GlassFx>}
 
         {interviewReady && <div className="gv2-ariane-ready gv2-ariane-stream-in">
-          <p>Votre situation est suffisamment claire. Ariane peut maintenant produire votre diagnostic.</p>
+          <p>Votre situation est suffisamment claire. Le Stratège peut maintenant produire votre diagnostic.</p>
           <button type="button" className="gv2-ariane-ready-cta" onClick={genererDepuisEntretien}>Générer mon diagnostic stratégique →</button>
         </div>}
 

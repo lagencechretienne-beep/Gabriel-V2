@@ -191,7 +191,7 @@ function StrategyContextPanel({ interview, mission, onStart, isStarting }) {
       <div className={`gv2-strategy-clarity${isClear ? ' is-clear' : ''}`}><span /><p>{isClear ? 'Votre situation est suffisamment claire' : started ? 'Entretien en cours' : 'Entretien non commencé'}</p></div>
       <div className="gv2-strategy-clarity-line"><i style={{ width: `${total > 0 ? Math.round((understood.length / total) * 100) : 0}%` }} /></div>
       <h2>{isClear ? 'Compréhension suffisante' : total > 0 ? `${understood.length}/${total} clarifiés` : 'Contexte à préciser'}</h2>
-      <p>Ariane utilise uniquement les informations réellement reliées à ce workspace.</p>
+      <p>Le Stratège utilise uniquement les informations réellement reliées à ce workspace.</p>
     </section>
 
     <section className="gv2-strategy-context-body">
@@ -200,7 +200,7 @@ function StrategyContextPanel({ interview, mission, onStart, isStarting }) {
         <p className="gv2-strategy-context-label">Déjà compris</p>
         <div className="gv2-strategy-context-list">{understood.length ? understood.map(label => <ContextState key={label} done label={label} />) : <p className="gv2-strategy-context-empty">Rien pour le moment.</p>}</div>
         {remaining.length > 0 && <><p className="gv2-strategy-context-label gv2-strategy-context-label--pending">À éclaircir</p><div className="gv2-strategy-context-list">{remaining.map(label => <ContextState key={label} label={label} current={label === interview?.currentDimension} />)}</div></>}
-      </> : <div className="gv2-strategy-history">{messages.length ? messages.map((m, i) => <div key={i}><span /><p><strong>{m.role === 'user' ? 'Vous' : 'Ariane'}</strong><small>{m.content}</small></p></div>) : <p>L’historique apparaîtra ici.</p>}</div>}
+      </> : <div className="gv2-strategy-history">{messages.length ? messages.map((m, i) => <div key={i}><span /><p><strong>{m.role === 'user' ? 'Vous' : 'Le Stratège'}</strong><small>{m.content}</small></p></div>) : <p>L’historique apparaîtra ici.</p>}</div>}
       {mission?.execution && (mission.status === 'ready' || mission.status === 'failed') && <button type="button" className="gv2-strategy-context-launch" onClick={onStart} disabled={isStarting}><Icon name="sparkle" size={15} />{isStarting ? 'Lancement…' : mission.execution.label}</button>}
     </section>
   </div>;

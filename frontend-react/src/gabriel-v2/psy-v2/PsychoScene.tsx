@@ -298,7 +298,7 @@ export function PsychoScene(props: PsychoSceneProps) {
       {/* Après la lecture */}
       {onNavigateAgent && (
         <nav className="gv2-psy2-after" data-show={phase === "answered" && status === "done" ? "" : undefined} aria-label="Prolonger l’analyse">
-          <button type="button" onClick={() => onNavigateAgent("stratege")}>Transformer en stratégie <span>Ariane</span></button>
+          <button type="button" onClick={() => onNavigateAgent("stratege")}>Transformer en stratégie <span>Stratège</span></button>
           <button type="button" onClick={() => onNavigateAgent("createur")}>Transformer en contenu <span>Le Créateur</span></button>
         </nav>
       )}

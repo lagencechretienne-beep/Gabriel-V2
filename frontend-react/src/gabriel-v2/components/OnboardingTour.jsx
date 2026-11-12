@@ -17,12 +17,12 @@ const steps = [
   {
     eyebrow: '02 · Garder le cap',
     title: 'Les onglets indiquent où vous êtes.',
-    body: 'Le Psychologue ouvre la barre supérieure. Ariane et le Créateur prolongent son analyse ; Conversation, Activité et Mémoire restent à portée de clic.',
+    body: 'Le Psychologue ouvre la barre supérieure. Le Stratège et le Créateur prolongent son analyse ; Conversation, Activité et Mémoire restent à portée de clic.',
   },
   {
     eyebrow: '03 · Avancer',
     title: 'Commencez par une analyse.',
-    body: 'Collez le lien d’une vidéo, quelques avis ou un fichier. Le résultat s’ouvre sur une synthèse, puis se transmet à Ariane et au Créateur sans perdre le contexte.',
+    body: 'Collez le lien d’une vidéo, quelques avis ou un fichier. Le résultat s’ouvre sur une synthèse, puis se transmet au Stratège et au Créateur sans perdre le contexte.',
   },
   {
     eyebrow: '04 · Personnaliser',

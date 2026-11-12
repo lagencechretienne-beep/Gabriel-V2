@@ -4,7 +4,7 @@ import { fetchV2 } from '../api-client.js';
 import { GlassFx } from './GlassFx.jsx';
 
 /* Lecture à voix haute d'un texte du rapport.
-   - Voix : celle choisie dans l'entretien d'Ariane (même clé), servie par /voice/speak.
+   - Voix : celle choisie dans l'entretien du Stratège (même clé), servie par /voice/speak.
    - Si la voix serveur n'est pas disponible, repli sur la synthèse du navigateur.
    - Un seul texte est lu à la fois ; le texte est découpé (le serveur limite à 2 000 signes). */
 const VOICE_ID_KEY = 'gabriel_voice_id';

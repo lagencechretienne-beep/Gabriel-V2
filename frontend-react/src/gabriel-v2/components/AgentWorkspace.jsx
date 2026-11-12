@@ -36,7 +36,7 @@ function addStrategistThinkingState(frameDocument) {
       <div class="gv2-audio-thinking-surface">
         <span class="gv2-audio-thinking-dots" aria-hidden="true"><i></i><i></i></span>
         <div class="gv2-audio-thinking-preview"><span>V</span><p data-gv2-audio-preview></p><b aria-hidden="true"></b></div>
-        <div class="gv2-audio-thinking-status"><i aria-hidden="true"></i><em>Ariane réfléchit…</em></div>
+        <div class="gv2-audio-thinking-status"><i aria-hidden="true"></i><em>Le Stratège réfléchit…</em></div>
         <p class="gv2-audio-thinking-copy">Je relie les éléments de votre réponse à votre situation.</p>
       </div>`;
     chatWindow.append(thinking);
@@ -93,16 +93,16 @@ function adaptStrategistComposer(frameDocument) {
   }
 
   const input = composer.querySelector('#chat-input');
-  input?.setAttribute('aria-label', 'Votre réponse à Ariane');
+  input?.setAttribute('aria-label', 'Votre réponse au Stratège');
 
   const mic = composer.querySelector('#mic-btn');
-  mic?.setAttribute('aria-label', 'Répondre à Ariane à la voix');
+  mic?.setAttribute('aria-label', 'Répondre au Stratège à la voix');
   mic?.setAttribute('title', 'Répondre à la voix');
 }
 
 /* Le template historique nomme encore ponctuellement « Gabriel » dans ses
    libellés vocaux. La logique et les données restent intactes ; seule la
-   copie visible de l'espace Ariane est harmonisée dans l'iframe V2. */
+   copie visible de l'espace le Stratège est harmonisée dans l'iframe V2. */
 function adaptStrategistVoiceCopy(frameDocument) {
   const selectors = [
     '#interview-state-kicker',
@@ -118,11 +118,11 @@ function adaptStrategistVoiceCopy(frameDocument) {
     const textNodes = [...node.childNodes].filter(child => child.nodeType === 3);
     if (textNodes.length) {
       textNodes.forEach(child => {
-        if (child.textContent?.includes('Gabriel')) child.textContent = child.textContent.replaceAll('Gabriel', 'Ariane');
+        if (child.textContent?.includes('Gabriel')) child.textContent = child.textContent.replaceAll('Gabriel', 'Le Stratège');
       });
       return;
     }
-    node.textContent = node.textContent.replaceAll('Gabriel', 'Ariane');
+    node.textContent = node.textContent.replaceAll('Gabriel', 'Le Stratège');
   });
 
   sync();
@@ -249,12 +249,12 @@ function applyV2EmbeddedPresentation(frameDocument, agentId, darkMode) {
     const audioWrite = frameDocument.querySelector('#gate-intro .gate-write');
     const listeningTitle = frameDocument.querySelector('#listening-title');
     const listeningCopy = frameDocument.querySelector('#listening-overlay .listening-copy');
-    if (welcomeTitle) welcomeTitle.textContent = 'Bonjour, je suis Ariane, votre stratège.';
+    if (welcomeTitle) welcomeTitle.textContent = 'Bonjour, je suis le Stratège de Gabriel.';
     if (welcomeCopy) welcomeCopy.textContent = 'Ensemble, transformons vos ambitions et vos enjeux en une stratégie claire, solide et prête à être déployée.';
-    if (audioLabel) audioLabel.textContent = 'Ariane · votre stratège';
-    if (audioQuestion && !audioQuestion.textContent.trim()) audioQuestion.textContent = 'Exprimez votre besoin avec vos propres mots. Ariane en clarifiera les priorités et la suite.';
+    if (audioLabel) audioLabel.textContent = 'Le Stratège · votre stratège';
+    if (audioQuestion && !audioQuestion.textContent.trim()) audioQuestion.textContent = 'Exprimez votre besoin avec vos propres mots. Le Stratège en clarifiera les priorités et la suite.';
     if (audioWrite) audioWrite.textContent = 'Je préfère répondre par écrit';
-    if (listeningTitle) listeningTitle.textContent = 'Ariane vous écoute.';
+    if (listeningTitle) listeningTitle.textContent = 'Le Stratège vous écoute.';
     if (listeningCopy) listeningCopy.textContent = 'Parlez librement. Votre réponse est retranscrite en direct.';
     addStrategistThinkingState(frameDocument);
     adaptStrategistComposer(frameDocument);
@@ -349,7 +349,7 @@ function applyV2EmbeddedPresentation(frameDocument, agentId, darkMode) {
     ` : ''}
   ` : `
     /* Contrat d'intégration V2 : le shell Gabriel possède déjà l'identité
-       d'Ariane et son panneau de progression. L'iframe ne rend donc que le
+       du Stratège et son panneau de progression. L'iframe ne rend donc que le
        parcours central. Les éléments historiques restent dans le DOM pour
        leurs contrôleurs, mais ne créent plus de seconde colonne ni de
        scrollbar concurrente. */
@@ -759,7 +759,7 @@ function applyV2EmbeddedPresentation(frameDocument, agentId, darkMode) {
     body.is-embedded-agent.page-stratege #gate-intro .gate-mic::before { display: none !important; }
     body.is-embedded-agent.page-stratege #gate-intro .gate-mic svg { width: 29px !important; height: 29px !important; stroke: currentColor !important; }
     body.is-embedded-agent.page-stratege #gate-intro .gate-question { min-height: 46px !important; color: #5f594f !important; font-size: 13px !important; text-align: center !important; }
-    body.is-embedded-agent.page-stratege #gate-intro .gate-question:empty::before { content: 'Expliquez votre besoin avec vos propres mots. Ariane structure ensuite les priorités.'; }
+    body.is-embedded-agent.page-stratege #gate-intro .gate-question:empty::before { content: 'Expliquez votre besoin avec vos propres mots. Le Stratège structure ensuite les priorités.'; }
     body.is-embedded-agent.page-stratege #gate-intro .gate-write { color: #71685d !important; }
     body.is-embedded-agent.page-stratege .chat-window.is-recording .listening-overlay {
       inset: 20px !important;
@@ -2156,7 +2156,7 @@ function applyV2EmbeddedPresentation(frameDocument, agentId, darkMode) {
     }
 
     /* Lecture de la réponse : la barre native devient une ligne secondaire,
-       sans bulle et sans concurrence avec le texte d'Ariane. */
+       sans bulle et sans concurrence avec le texte du Stratège. */
     body.is-embedded-agent.page-stratege .voice-toolbar {
       width: min(720px, calc(100% - 40px)) !important;
       min-height: 30px !important;

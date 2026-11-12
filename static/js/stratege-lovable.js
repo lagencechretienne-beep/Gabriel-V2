@@ -53,7 +53,7 @@
     var intro = document.createElement('div');
     intro.className = 'st-context-intro';
     intro.innerHTML =
-      '<p>Ariane utilise uniquement les informations réellement reliées à ce workspace.</p>';
+      '<p>Le Stratège utilise uniquement les informations réellement reliées à ce workspace.</p>';
     progress.insertAdjacentElement('afterend', intro);
   }
 
@@ -69,11 +69,11 @@
   function enhanceComposer() {
     var composer = document.querySelector('.chat-input-row');
     if (!composer) return;
-    composer.setAttribute('aria-label', 'Écrire à Ariane');
+    composer.setAttribute('aria-label', 'Écrire au Stratège');
     var input = document.getElementById('chat-input');
     if (input) input.setAttribute('placeholder', 'Écrivez votre réponse ou utilisez le micro…');
     var messages = document.getElementById('chat-messages');
-    if (messages) messages.setAttribute('aria-label', 'Conversation avec Ariane');
+    if (messages) messages.setAttribute('aria-label', 'Conversation avec le Stratège');
   }
 
   function reportDecision(data) {

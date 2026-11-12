@@ -10,8 +10,8 @@ export const agents = {
   },
   stratege: {
     id: 'stratege',
-    name: 'Ariane',
-    shortName: 'Ariane',
+    name: 'Le Stratège',
+    shortName: 'Stratège',
     role: 'Votre stratège de conseil.',
     path: '/stratege',
     portrait: '/static/images/personas/p2.jpeg',

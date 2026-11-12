@@ -99,7 +99,7 @@ describe('Sources de contexte du Créateur', () => {
     renderCreator({ workspace: { folder_id: 'f1', analysis_id: 'a-1', strategy_id: 's-1' } });
 
     expect(screen.getByRole('button', { name: /Analyse du Psychologue/ })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: /Stratégie d’Ariane/ })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: /Stratégie/ })).toHaveAttribute('aria-pressed', 'false');
     await demander(user);
     expect(envois[0]).toMatchObject({ use_psycho: true, analysis_id: 'a-1', use_strategy: false });
     expect(envois[0].strategy_id).toBeUndefined();
@@ -109,7 +109,7 @@ describe('Sources de contexte du Créateur', () => {
     const envois = espionnerGeneration();
     const user = userEvent.setup();
     renderCreator({ workspace: { folder_id: 'f1', analysis_id: 'a-1', strategy_id: 's-1' } });
-    await user.click(screen.getByRole('button', { name: /Stratégie d’Ariane/ }));
+    await user.click(screen.getByRole('button', { name: /Stratégie/ }));
     await demander(user);
     expect(envois[0]).toMatchObject({ use_strategy: true, strategy_id: 's-1' });
   });
@@ -121,8 +121,8 @@ describe('Sources de contexte du Créateur', () => {
       workspace: { folder_id: 'f1', analysis_id: 'a-1', strategy_id: 's-1' },
       creatorHandoff: { source: 'stratege', folder_id: 'f1', strategy_id: 's-1' },
     });
-    expect(screen.getByText('Activée depuis Ariane')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Stratégie d’Ariane/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('Activée depuis le Stratège')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Stratégie/ })).toHaveAttribute('aria-pressed', 'true');
     await demander(user);
     expect(envois[0]).toMatchObject({ folder_id: 'f1', use_strategy: true, strategy_id: 's-1' });
   });
@@ -132,8 +132,8 @@ describe('Sources de contexte du Créateur', () => {
       workspace: { folder_id: 'f1', strategy_id: 's-1' },
       creatorHandoff: { source: 'stratege', folder_id: 'f-old', strategy_id: 's-old' },
     });
-    expect(screen.getByRole('button', { name: /Stratégie d’Ariane/ })).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.queryByText('Activée depuis Ariane')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Stratégie/ })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByText('Activée depuis le Stratège')).not.toBeInTheDocument();
   });
 
   it('reprend la dernière analyse vue dans le Psychologue, même hors espace', async () => {
@@ -200,7 +200,7 @@ describe('Rendu des créations', () => {
   it('dit quelles sources ont nourri la création et montre la relecture', async () => {
     await generer(SCRIPT);
     expect(await screen.findByText('Analyse du Psychologue utilisée')).toBeInTheDocument();
-    expect(screen.getByText('Sans stratégie d’Ariane')).toBeInTheDocument();
+    expect(screen.getByText('Sans stratégie')).toBeInTheDocument();
     expect(screen.getByText('Clarté')).toBeInTheDocument();
   });
 
